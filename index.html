@@ -349,8 +349,13 @@
         Оценка: 1 — не соответствует, 5 — полностью соответствует.
     </p>
 
-    <!-- ЗАМЕНИТЕ ССЫЛКУ НИЖЕ НА ENDPOINT ОТ ВАШЕГО СЕРВИСА -->
-    <form action="https://onsubmit.dev/f/txqt20w3" method="POST">
+    <!-- ЗАМЕНИТЕ EMAIL НИЖЕ НА СВОЙ -->
+    <form action="https://formsubmit.co/sales@darksidevolga.ru" method="POST">
+
+        <!-- Служебные поля FormSubmit -->
+        <input type="hidden" name="_subject" value="Новая заявка с анкеты">
+        <input type="hidden" name="_captcha" value="false">
+        <input type="hidden" name="_template" value="table">
 
         <div class="field">
             <label class="question" for="company">Наименование вашей организации<span class="required">*</span></label>
@@ -473,33 +478,27 @@
     var input = document.getElementById('phone');
     if (!input) return;
 
-    // При фокусе на пустое поле — подставляем +7
     input.addEventListener('focus', function () {
         if (!input.value) {
             input.value = '+7 ';
         }
     });
 
-    // Если ушли с пустого поля — очищаем
     input.addEventListener('blur', function () {
         if (input.value === '+7 ' || input.value === '+7') {
             input.value = '';
         }
     });
 
-    // Форматирование в процессе ввода
     input.addEventListener('input', function () {
         var digits = input.value.replace(/\D/g, '');
 
-        // 8 в начале меняем на 7
         if (digits.startsWith('8')) {
             digits = '7' + digits.slice(1);
         }
-        // Если не начинается с 7 — добавляем
         if (digits && !digits.startsWith('7')) {
             digits = '7' + digits;
         }
-        // Максимум 11 цифр
         digits = digits.slice(0, 11);
 
         var formatted = '+7';
