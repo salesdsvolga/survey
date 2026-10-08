@@ -20,7 +20,6 @@
         align-items: flex-start;
     }
 
-    /* ==== Контейнер с бегущим блеском по рамке ==== */
     .container {
         position: relative;
         max-width: 640px;
@@ -38,18 +37,9 @@
         inset: 0;
         border-radius: 18px;
         padding: 1px;
-        background: linear-gradient(
-            130deg,
-            #1a1a1a 0%,
-            #1a1a1a 40%,
-            rgba(255,255,255,0.7) 50%,
-            #1a1a1a 60%,
-            #1a1a1a 100%
-        );
+        background: linear-gradient(130deg, #1a1a1a 0%, #1a1a1a 40%, rgba(255,255,255,0.7) 50%, #1a1a1a 60%, #1a1a1a 100%);
         background-size: 300% 300%;
-        -webkit-mask:
-            linear-gradient(#000 0 0) content-box,
-            linear-gradient(#000 0 0);
+        -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
         -webkit-mask-composite: xor;
                 mask-composite: exclude;
         animation: borderShimmer 5s linear infinite;
@@ -61,11 +51,7 @@
         100% { background-position: -100% 0; }
     }
 
-    /* ==== Логотип ==== */
-    .logo-wrap {
-        text-align: center;
-        margin-bottom: 24px;
-    }
+    .logo-wrap { text-align: center; margin-bottom: 24px; }
 
     .logo {
         max-width: 200px;
@@ -77,12 +63,8 @@
         transition: opacity 0.3s, filter 0.3s;
     }
 
-    .logo:hover {
-        opacity: 1;
-        filter: drop-shadow(0 0 30px rgba(255,255,255,0.3));
-    }
+    .logo:hover { opacity: 1; filter: drop-shadow(0 0 30px rgba(255,255,255,0.3)); }
 
-    /* ==== Заголовок с блеском ==== */
     h1 {
         position: relative;
         font-size: 26px;
@@ -90,14 +72,7 @@
         letter-spacing: 0.5px;
         text-align: center;
         margin-bottom: 8px;
-        background: linear-gradient(
-            100deg,
-            #ffffff 0%,
-            #ffffff 40%,
-            #888888 50%,
-            #ffffff 60%,
-            #ffffff 100%
-        );
+        background: linear-gradient(100deg, #ffffff 0%, #ffffff 40%, #888888 50%, #ffffff 60%, #ffffff 100%);
         background-size: 250% 100%;
         -webkit-background-clip: text;
         background-clip: text;
@@ -111,12 +86,7 @@
         100% { background-position: -200% 0; }
     }
 
-    .subtitle {
-        text-align: center;
-        color: #888;
-        font-size: 14px;
-        margin-bottom: 8px;
-    }
+    .subtitle { text-align: center; color: #888; font-size: 14px; margin-bottom: 8px; }
 
     .scale-hint {
         text-align: center;
@@ -127,7 +97,6 @@
         border-bottom: 1px solid #1a1a1a;
     }
 
-    /* ==== Поля ==== */
     .field { margin-bottom: 28px; }
 
     label.question {
@@ -138,18 +107,9 @@
         font-size: 15px;
     }
 
-    .field-hint {
-        color: #777;
-        font-size: 13px;
-        line-height: 1.5;
-        margin-bottom: 12px;
-    }
+    .field-hint { color: #777; font-size: 13px; line-height: 1.5; margin-bottom: 12px; }
 
-    .required {
-        color: #fff;
-        margin-left: 4px;
-        font-weight: 700;
-    }
+    .required { color: #fff; margin-left: 4px; font-weight: 700; }
 
     input[type="text"], input[type="tel"], textarea {
         width: 100%;
@@ -172,18 +132,9 @@
 
     input::placeholder { color: #555; }
 
-    textarea {
-        min-height: 100px;
-        resize: vertical;
-    }
+    textarea { min-height: 100px; resize: vertical; }
 
-    /* ==== Шкала оценки 1–5 ==== */
-    .rating {
-        display: flex;
-        gap: 10px;
-        flex-wrap: wrap;
-    }
-
+    .rating { display: flex; gap: 10px; flex-wrap: wrap; }
     .rating input[type="radio"] { display: none; }
 
     .rating label {
@@ -207,34 +158,21 @@
     .rating label::after {
         content: "";
         position: absolute;
-        top: 0;
-        left: -80%;
-        width: 50%;
-        height: 100%;
-        background: linear-gradient(
-            120deg,
-            transparent 0%,
-            rgba(255,255,255,0.15) 50%,
-            transparent 100%
-        );
+        top: 0; left: -80%;
+        width: 50%; height: 100%;
+        background: linear-gradient(120deg, transparent 0%, rgba(255,255,255,0.15) 50%, transparent 100%);
         transform: skewX(-20deg);
         pointer-events: none;
     }
 
-    .rating label:hover::after {
-        animation: tileShimmer 0.9s ease;
-    }
+    .rating label:hover::after { animation: tileShimmer 0.9s ease; }
 
     @keyframes tileShimmer {
         0%   { left: -80%; }
         100% { left: 130%; }
     }
 
-    .rating label:hover {
-        border-color: #666;
-        color: #eee;
-        background: #161616;
-    }
+    .rating label:hover { border-color: #666; color: #eee; background: #161616; }
 
     .rating input[type="radio"]:checked + label {
         background: #fff;
@@ -243,11 +181,7 @@
         box-shadow: 0 0 28px rgba(255,255,255,0.35);
     }
 
-    /* ==== Кнопка с блеском ==== */
-    .submit-wrap {
-        margin-top: 36px;
-        text-align: center;
-    }
+    .submit-wrap { margin-top: 36px; text-align: center; }
 
     button.shimmer {
         position: relative;
@@ -271,18 +205,9 @@
     button.shimmer::before {
         content: "";
         position: absolute;
-        top: 0;
-        left: -75%;
-        width: 55%;
-        height: 100%;
-        background: linear-gradient(
-            120deg,
-            transparent 0%,
-            rgba(0,0,0,0.0) 30%,
-            rgba(0,0,0,0.35) 50%,
-            rgba(0,0,0,0.0) 70%,
-            transparent 100%
-        );
+        top: 0; left: -75%;
+        width: 55%; height: 100%;
+        background: linear-gradient(120deg, transparent 0%, rgba(0,0,0,0.0) 30%, rgba(0,0,0,0.35) 50%, rgba(0,0,0,0.0) 70%, transparent 100%);
         transform: skewX(-20deg);
         animation: shimmer 2.4s infinite;
     }
@@ -290,16 +215,9 @@
     button.shimmer::after {
         content: "";
         position: absolute;
-        top: 0;
-        left: -100%;
-        width: 40%;
-        height: 100%;
-        background: linear-gradient(
-            120deg,
-            transparent 0%,
-            rgba(255,255,255,0.9) 50%,
-            transparent 100%
-        );
+        top: 0; left: -100%;
+        width: 40%; height: 100%;
+        background: linear-gradient(120deg, transparent 0%, rgba(255,255,255,0.9) 50%, transparent 100%);
         transform: skewX(-20deg);
         animation: shimmerLight 2.4s infinite;
         animation-delay: 0.35s;
@@ -312,6 +230,7 @@
     }
 
     button.shimmer:active { transform: translateY(0); }
+    button.shimmer:disabled { opacity: 0.6; cursor: not-allowed; }
 
     @keyframes shimmer {
         0%   { left: -75%; }
@@ -325,7 +244,6 @@
         100% { left: 140%; }
     }
 
-    /* ==== Адаптив ==== */
     @media (max-width: 520px) {
         .container { padding: 28px 20px; }
         h1 { font-size: 21px; }
@@ -349,13 +267,7 @@
         Оценка: 1 — не соответствует, 5 — полностью соответствует.
     </p>
 
-    <!-- ЗАМЕНИТЕ EMAIL НИЖЕ НА СВОЙ -->
-    <form action="https://formsubmit.co/7c81a2a4a0537d3d218b07b7e89c38be" method="POST">
-
-        <!-- Служебные поля FormSubmit -->
-        <input type="hidden" name="_subject" value="Новая заявка с анкеты">
-        <input type="hidden" name="_captcha" value="false">
-        <input type="hidden" name="_template" value="table">
+    <form id="surveyForm">
 
         <div class="field">
             <label class="question" for="company">Наименование вашей организации<span class="required">*</span></label>
@@ -467,57 +379,86 @@
         </div>
 
         <div class="submit-wrap">
-            <button type="submit" class="shimmer">Отправить</button>
+            <button type="submit" class="shimmer" id="submitBtn">Отправить</button>
         </div>
 
     </form>
 </div>
 
 <script>
+// ==== НАСТРОЙКИ TELEGRAM ====
+// Замените эти значения на свои (см. инструкцию ниже)
+var TG_TOKEN   = '8959861857:AAGfyARDGTxjR8tA-9F0U2S3LBHwMn4s5XM';
+var TG_CHAT_ID = '932016160';
+// =============================
+
+// Автоформат телефона
 (function () {
     var input = document.getElementById('phone');
     if (!input) return;
 
     input.addEventListener('focus', function () {
-        if (!input.value) {
-            input.value = '+7 ';
-        }
+        if (!input.value) input.value = '+7 ';
     });
 
     input.addEventListener('blur', function () {
-        if (input.value === '+7 ' || input.value === '+7') {
-            input.value = '';
-        }
+        if (input.value === '+7 ' || input.value === '+7') input.value = '';
     });
 
     input.addEventListener('input', function () {
         var digits = input.value.replace(/\D/g, '');
-
-        if (digits.startsWith('8')) {
-            digits = '7' + digits.slice(1);
-        }
-        if (digits && !digits.startsWith('7')) {
-            digits = '7' + digits;
-        }
+        if (digits.startsWith('8')) digits = '7' + digits.slice(1);
+        if (digits && !digits.startsWith('7')) digits = '7' + digits;
         digits = digits.slice(0, 11);
 
         var formatted = '+7';
-        if (digits.length > 1) {
-            formatted += ' (' + digits.slice(1, 4);
-        }
-        if (digits.length >= 5) {
-            formatted += ') ' + digits.slice(4, 7);
-        }
-        if (digits.length >= 8) {
-            formatted += '-' + digits.slice(7, 9);
-        }
-        if (digits.length >= 10) {
-            formatted += '-' + digits.slice(9, 11);
-        }
-
+        if (digits.length > 1) formatted += ' (' + digits.slice(1, 4);
+        if (digits.length >= 5) formatted += ') ' + digits.slice(4, 7);
+        if (digits.length >= 8) formatted += '-' + digits.slice(7, 9);
+        if (digits.length >= 10) formatted += '-' + digits.slice(9, 11);
         input.value = formatted;
     });
 })();
+
+// Отправка формы в Telegram
+document.getElementById('surveyForm').addEventListener('submit', function (e) {
+    e.preventDefault();
+
+    var btn = document.getElementById('submitBtn');
+    btn.disabled = true;
+    btn.textContent = 'Отправка...';
+
+    var formData = new FormData(e.target);
+    var text = '📋 Новая заявка с анкеты:\n\n';
+    for (var pair of formData.entries()) {
+        text += '▫️ ' + pair[0] + ': ' + pair[1] + '\n';
+    }
+
+    fetch('https://api.telegram.org/bot' + TG_TOKEN + '/sendMessage', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            chat_id: TG_CHAT_ID,
+            text: text
+        })
+    })
+    .then(function (r) { return r.json(); })
+    .then(function (data) {
+        if (data.ok) {
+            alert('Спасибо! Ваша заявка отправлена. Мы свяжемся с вами при необходимости.');
+            document.getElementById('surveyForm').reset();
+        } else {
+            alert('Ошибка отправки: ' + (data.description || 'неизвестная ошибка'));
+        }
+        btn.disabled = false;
+        btn.textContent = 'Отправить';
+    })
+    .catch(function () {
+        alert('Ошибка соединения. Попробуйте ещё раз.');
+        btn.disabled = false;
+        btn.textContent = 'Отправить';
+    });
+});
 </script>
 
 </body>
