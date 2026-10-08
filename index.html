@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Анкета о сервисе</title>
+<style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+        background: #000;
+        color: #e8e8e8;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+        font-size: 16px;
+        line-height: 1.6;
+        padding: 40px 20px;
+        min-height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+    }
+
+    /* ==== Контейнер с бегущим блеском по рамке ==== */
+    .container {
+        position: relative;
+        max-width: 640px;
+        width: 100%;
+        background: #0a0a0a;
+        border-radius: 18px;
+        padding: 40px 32px;
+        overflow: hidden;
+        box-shadow: 0 0 80px rgba(255,255,255,0.04);
+    }
+
+    .container::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        border-radius: 18px;
+        padding: 1px;
+        background: linear-gradient(
+            130deg,
+            #1a1a1a 0%,
+            #1a1a1a 40%,
+            rgba(255,255,255,0.7) 50%,
+            #1a1a1a 60%,
+            #1a1a1a 100%
+        );
+        background-size: 300% 300%;
+        -webkit-mask:
+            linear-gradient(#000 0 0) content-box,
+            linear-gradient(#000 0 0);
+        -webkit-mask-composite: xor;
+                mask-composite: exclude;
+        animation: borderShimmer 5s linear infinite;
+        pointer-events: none;
+    }
+
+    @keyframes borderShimmer {
+        0%   { background-position: 100% 0; }
+        100% { background-position: -100% 0; }
+    }
+
+    /* ==== Логотип ==== */
+    .logo-wrap {
+        text-align: center;
+        margin-bottom: 24px;
+    }
+
+    .logo {
+        max-width: 200px;
+        width: 100%;
+        height: auto;
+        display: inline-block;
+        opacity: 0.95;
+        filter: drop-shadow(0 0 24px rgba(255,255,255,0.12));
+        transition: opacity 0.3s, filter 0.3s;
+    }
+
+    .logo:hover {
+        opacity: 1;
+        filter: drop-shadow(0 0 30px rgba(255,255,255,0.3));
+    }
+
+    /* ==== Заголовок с блеском ==== */
+    h1 {
+        position: relative;
+        font-size: 26px;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+        text-align: center;
+        margin-bottom: 8px;
+        background: linear-gradient(
+            100deg,
+            #ffffff 0%,
+            #ffffff 40%,
+            #888888 50%,
+            #ffffff 60%,
+            #ffffff 100%
+        );
+        background-size: 250% 100%;
+        -webkit-background-clip: text;
+        background-clip: text;
+        color: transparent;
+        -webkit-text-fill-color: transparent;
+        animation: textShimmer 4s linear infinite;
+    }
+
+    @keyframes textShimmer {
+        0%   { background-position: 200% 0; }
+        100% { background-position: -200% 0; }
+    }
+
+    .subtitle {
+        text-align: center;
+        color: #888;
+        font-size: 14px;
+        margin-bottom: 8px;
+    }
+
+    .scale-hint {
+        text-align: center;
+        color: #666;
+        font-size: 13px;
+        margin-bottom: 32px;
+        padding-bottom: 24px;
+        border-bottom: 1px solid #1a1a1a;
+    }
+
+    /* ==== Поля ==== */
+    .field { margin-bottom: 28px; }
+
+    label.question {
+        display: block;
+        font-weight: 500;
+        color: #dcdcdc;
+        margin-bottom: 14px;
+        font-size: 15px;
+    }
+
+    .required {
+        color: #fff;
+        margin-left: 4px;
+        font-weight: 700;
+    }
+
+    input[type="text"], textarea {
+        width: 100%;
+        background: #111;
+        border: 1px solid #2a2a2a;
+        border-radius: 10px;
+        color: #fff;
+        padding: 14px 16px;
+        font-size: 15px;
+        font-family: inherit;
+        transition: border-color 0.25s, box-shadow 0.25s, background 0.25s;
+        outline: none;
+    }
+
+    input[type="text"]:focus, textarea:focus {
+        border-color: #666;
+        background: #161616;
+        box-shadow: 0 0 0 3px rgba(255,255,255,0.06), 0 0 24px rgba(255,255,255,0.08);
+    }
+
+    textarea {
+        min-height: 100px;
+        resize: vertical;
+    }
+
+    /* ==== Шкала оценки 1–5 ==== */
+    .rating {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+    }
+
+    .rating input[type="radio"] { display: none; }
+
+    .rating label {
+        position: relative;
+        flex: 1;
+        min-width: 52px;
+        text-align: center;
+        padding: 12px 0;
+        background: #111;
+        border: 1px solid #2a2a2a;
+        border-radius: 10px;
+        cursor: pointer;
+        color: #999;
+        font-weight: 600;
+        font-size: 15px;
+        transition: all 0.25s ease;
+        user-select: none;
+        overflow: hidden;
+    }
+
+    /* Пробегающий блеск по плиткам */
+    .rating label::after {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: -80%;
+        width: 50%;
+        height: 100%;
+        background: linear-gradient(
+            120deg,
+            transparent 0%,
+            rgba(255,255,255,0.15) 50%,
+            transparent 100%
+        );
+        transform: skewX(-20deg);
+        pointer-events: none;
+    }
+
+    .rating label:hover::after {
+        animation: tileShimmer 0.9s ease;
+    }
+
+    @keyframes tileShimmer {
+        0%   { left: -80%; }
+        100% { left: 130%; }
+    }
+
+    .rating label:hover {
+        border-color: #666;
+        color: #eee;
+        background: #161616;
+    }
+
+    .rating input[type="radio"]:checked + label {
+        background: #fff;
+        color: #000;
+        border-color: #fff;
+        box-shadow: 0 0 28px rgba(255,255,255,0.35);
+    }
+
+    /* ==== Кнопка с блеском ==== */
+    .submit-wrap {
+        margin-top: 36px;
+        text-align: center;
+    }
+
+    button.shimmer {
+        position: relative;
+        display: inline-block;
+        width: 100%;
+        padding: 18px 32px;
+        font-size: 16px;
+        font-weight: 700;
+        letter-spacing: 1.5px;
+        text-transform: uppercase;
+        color: #000;
+        background: #fff;
+        border: none;
+        border-radius: 12px;
+        cursor: pointer;
+        overflow: hidden;
+        transition: transform 0.2s, box-shadow 0.3s;
+        font-family: inherit;
+    }
+
+    button.shimmer::before {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: -75%;
+        width: 55%;
+        height: 100%;
+        background: linear-gradient(
+            120deg,
+            transparent 0%,
+            rgba(0,0,0,0.0) 30%,
+            rgba(0,0,0,0.35) 50%,
+            rgba(0,0,0,0.0) 70%,
+            transparent 100%
+        );
+        transform: skewX(-20deg);
+        animation: shimmer 2.4s infinite;
+    }
+
+    /* Второй слой блеска — светлый, для глубины */
+    button.shimmer::after {
+        content: "";
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 40%;
+        height: 100%;
+        background: linear-gradient(
+            120deg,
+            transparent 0%,
+            rgba(255,255,255,0.9) 50%,
+            transparent 100%
+        );
+        transform: skewX(-20deg);
+        animation: shimmerLight 2.4s infinite;
+        animation-delay: 0.35s;
+        pointer-events: none;
+    }
+
+    button.shimmer:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 0 40px rgba(255,255,255,0.4), 0 0 80px rgba(255,255,255,0.15);
+    }
+
+    button.shimmer:active { transform: translateY(0); }
+
+    @keyframes shimmer {
+        0%   { left: -75%; }
+        60%  { left: 125%; }
+        100% { left: 125%; }
+    }
+
+    @keyframes shimmerLight {
+        0%   { left: -100%; }
+        60%  { left: 140%; }
+        100% { left: 140%; }
+    }
+
+    /* ==== Адаптив ==== */
+    @media (max-width: 520px) {
+        .container { padding: 28px 20px; }
+        h1 { font-size: 21px; }
+        .logo { max-width: 160px; }
+        .rating label { min-width: 44px; font-size: 14px; padding: 10px 0; }
+    }
+</style>
+</head>
+<body>
+
+<div class="container">
+
+    <!-- ЛОГОТИП: замените logo.svg на имя вашего файла -->
+    <div class="logo-wrap">
+        <img src="logo.png" alt="Логотип компании" class="logo">
+    </div>
+
+    <h1>Ваш взгляд на сотрудничество</h1>
+    <p class="subtitle">Сервис и торговые представители</p>
+    <p class="scale-hint">
+        Анкета займёт 2–3 минуты.<br>
+        Оценка: 1 — не соответствует, 5 — полностью соответствует.
+    </p>
+
+    <!-- ЗАМЕНИТЕ ССЫЛКУ НИЖЕ НА ENDPOINT ОТ FORMSPREE -->
+   <form action="https://onsubmit.dev/f/txqt20w3" method="POST">
+
+        <div class="field">
+            <label class="question" for="name">Ваше имя<span class="required">*</span></label>
+            <input type="text" id="name" name="Имя" required>
+        </div>
+
+        <div class="field">
+            <label class="question">1. Насколько в целом вы удовлетворены сервисом нашей компании?</label>
+            <div class="rating">
+                <input type="radio" id="q1_1" name="Вопрос 1" value="1" required><label for="q1_1">1</label>
+                <input type="radio" id="q1_2" name="Вопрос 1" value="2"><label for="q1_2">2</label>
+                <input type="radio" id="q1_3" name="Вопрос 1" value="3"><label for="q1_3">3</label>
+                <input type="radio" id="q1_4" name="Вопрос 1" value="4"><label for="q1_4">4</label>
+                <input type="radio" id="q1_5" name="Вопрос 1" value="5"><label for="q1_5">5</label>
+            </div>
+        </div>
+
+        <div class="field">
+            <label class="question">2. Насколько работа вашего торгового представителя соответствует вашим ожиданиям?</label>
+            <div class="rating">
+                <input type="radio" id="q2_1" name="Вопрос 2" value="1" required><label for="q2_1">1</label>
+                <input type="radio" id="q2_2" name="Вопрос 2" value="2"><label for="q2_2">2</label>
+                <input type="radio" id="q2_3" name="Вопрос 2" value="3"><label for="q2_3">3</label>
+                <input type="radio" id="q2_4" name="Вопрос 2" value="4"><label for="q2_4">4</label>
+                <input type="radio" id="q2_5" name="Вопрос 2" value="5"><label for="q2_5">5</label>
+            </div>
+        </div>
+
+        <div class="field">
+            <label class="question">3. Насколько торговый представитель доступен и оперативен, когда у вас появляется запрос?</label>
+            <div class="rating">
+                <input type="radio" id="q3_1" name="Вопрос 3" value="1" required><label for="q3_1">1</label>
+                <input type="radio" id="q3_2" name="Вопрос 3" value="2"><label for="q3_2">2</label>
+                <input type="radio" id="q3_3" name="Вопрос 3" value="3"><label for="q3_3">3</label>
+                <input type="radio" id="q3_4" name="Вопрос 3" value="4"><label for="q3_4">4</label>
+                <input type="radio" id="q3_5" name="Вопрос 3" value="5"><label for="q3_5">5</label>
+            </div>
+        </div>
+
+        <div class="field">
+            <label class="question">4. Насколько компетентно торговый представитель помогает вам с выбором ассортимента?</label>
+            <div class="rating">
+                <input type="radio" id="q4_1" name="Вопрос 4" value="1" required><label for="q4_1">1</label>
+                <input type="radio" id="q4_2" name="Вопрос 4" value="2"><label for="q4_2">2</label>
+                <input type="radio" id="q4_3" name="Вопрос 4" value="3"><label for="q4_3">3</label>
+                <input type="radio" id="q4_4" name="Вопрос 4" value="4"><label for="q4_4">4</label>
+                <input type="radio" id="q4_5" name="Вопрос 4" value="5"><label for="q4_5">5</label>
+            </div>
+        </div>
+
+        <div class="field">
+            <label class="question">5. Насколько своевременно торговый представитель информирует вас о новинках, акциях и специальных условиях?</label>
+            <div class="rating">
+                <input type="radio" id="q5_1" name="Вопрос 5" value="1" required><label for="q5_1">1</label>
+                <input type="radio" id="q5_2" name="Вопрос 5" value="2"><label for="q5_2">2</label>
+                <input type="radio" id="q5_3" name="Вопрос 5" value="3"><label for="q5_3">3</label>
+                <input type="radio" id="q5_4" name="Вопрос 5" value="4"><label for="q5_4">4</label>
+                <input type="radio" id="q5_5" name="Вопрос 5" value="5"><label for="q5_5">5</label>
+            </div>
+        </div>
+
+        <div class="field">
+            <label class="question">6. Насколько удобно вам взаимодействовать с нами по вопросам заказа и доставки?</label>
+            <div class="rating">
+                <input type="radio" id="q6_1" name="Вопрос 6" value="1" required><label for="q6_1">1</label>
+                <input type="radio" id="q6_2" name="Вопрос 6" value="2"><label for="q6_2">2</label>
+                <input type="radio" id="q6_3" name="Вопрос 6" value="3"><label for="q6_3">3</label>
+                <input type="radio" id="q6_4" name="Вопрос 6" value="4"><label for="q6_4">4</label>
+                <input type="radio" id="q6_5" name="Вопрос 6" value="5"><label for="q6_5">5</label>
+            </div>
+        </div>
+
+        <div class="field">
+            <label class="question">7. Насколько сроки доставки соответствуют вашим ожиданиям?</label>
+            <div class="rating">
+                <input type="radio" id="q7_1" name="Вопрос 7" value="1" required><label for="q7_1">1</label>
+                <input type="radio" id="q7_2" name="Вопрос 7" value="2"><label for="q7_2">2</label>
+                <input type="radio" id="q7_3" name="Вопрос 7" value="3"><label for="q7_3">3</label>
+                <input type="radio" id="q7_4" name="Вопрос 7" value="4"><label for="q7_4">4</label>
+                <input type="radio" id="q7_5" name="Вопрос 7" value="5"><label for="q7_5">5</label>
+            </div>
+        </div>
+
+        <div class="field">
+            <label class="question">8. Насколько наше сотрудничество в целом оправдывает ваши ожидания?</label>
+            <div class="rating">
+                <input type="radio" id="q8_1" name="Вопрос 8" value="1" required><label for="q8_1">1</label>
+                <input type="radio" id="q8_2" name="Вопрос 8" value="2"><label for="q8_2">2</label>
+                <input type="radio" id="q8_3" name="Вопрос 8" value="3"><label for="q8_3">3</label>
+                <input type="radio" id="q8_4" name="Вопрос 8" value="4"><label for="q8_4">4</label>
+                <input type="radio" id="q8_5" name="Вопрос 8" value="5"><label for="q8_5">5</label>
+            </div>
+        </div>
+
+        <div class="field">
+            <label class="question" for="q9">9. Что для вас наиболее ценно в работе наших торговых представителей?</label>
+            <textarea id="q9" name="Вопрос 9"></textarea>
+        </div>
+
+        <div class="field">
+            <label class="question" for="q10">10. Что мы можем сделать, чтобы сервис в целом, включая работу торговых представителей и доставку, стал для вас ещё удобнее?</label>
+            <textarea id="q10" name="Вопрос 10"></textarea>
+        </div>
+
+        <div class="submit-wrap">
+            <button type="submit" class="shimmer">Отправить</button>
+        </div>
+
+    </form>
+</div>
+
+</body>
+</html>
