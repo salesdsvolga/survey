@@ -137,7 +137,12 @@
         margin-bottom: 14px;
         font-size: 15px;
     }
-
+.field-hint {
+    color: #777;
+    font-size: 13px;
+    line-height: 1.5;
+    margin-bottom: 12px;
+}
     .required {
         color: #fff;
         margin-left: 4px;
@@ -347,7 +352,7 @@
    <form action="https://onsubmit.dev/f/txqt20w3" method="POST">
 
         <div class="field">
-            <label class="question" for="name">Наименование организации<span class="required">*</span></label>
+            <label class="question" for="name">Наименование вашей организации<span class="required">*</span></label>
             <input type="text" id="name" name="Имя" required>
         </div>
 
@@ -448,7 +453,10 @@
             <label class="question" for="q10">10. Что мы можем сделать, чтобы сервис в целом, включая работу торговых представителей и доставку, стал для вас ещё удобнее?</label>
             <textarea id="q10" name="Вопрос 10"></textarea>
         </div>
-
+  <div class="field">
+            <label class="question" for="phone">Номер телефона</label>
+            <p class="field-hint">Если хотите, чтобы мы вам перезвонили — оставьте номер.</p>
+            <input type
         <div class="submit-wrap">
             <button type="submit" class="shimmer">Отправить</button>
         </div>
