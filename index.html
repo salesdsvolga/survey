@@ -458,7 +458,7 @@
         <div class="field">
             <label class="question" for="phone">Номер телефона</label>
             <p class="field-hint">Если хотите, чтобы мы вам перезвонили — оставьте номер, и мы свяжемся в удобное для вас время.</p>
-            <input type="tel" id="phone" name="Телефон" placeholder="+7 (___) ___-__-__">
+            <input type="tel" id="phone" name="Телефон" placeholder="+7 (___) ___-__-__" maxlength="18" inputmode="numeric" autocomplete="tel">
         </div>
 
         <div class="submit-wrap">
@@ -467,6 +467,59 @@
 
     </form>
 </div>
+
+<script>
+(function () {
+    var input = document.getElementById('phone');
+    if (!input) return;
+
+    // При фокусе на пустое поле — подставляем +7
+    input.addEventListener('focus', function () {
+        if (!input.value) {
+            input.value = '+7 ';
+        }
+    });
+
+    // Если ушли с пустого поля — очищаем
+    input.addEventListener('blur', function () {
+        if (input.value === '+7 ' || input.value === '+7') {
+            input.value = '';
+        }
+    });
+
+    // Форматирование в процессе ввода
+    input.addEventListener('input', function () {
+        var digits = input.value.replace(/\D/g, '');
+
+        // 8 в начале меняем на 7
+        if (digits.startsWith('8')) {
+            digits = '7' + digits.slice(1);
+        }
+        // Если не начинается с 7 — добавляем
+        if (digits && !digits.startsWith('7')) {
+            digits = '7' + digits;
+        }
+        // Максимум 11 цифр
+        digits = digits.slice(0, 11);
+
+        var formatted = '+7';
+        if (digits.length > 1) {
+            formatted += ' (' + digits.slice(1, 4);
+        }
+        if (digits.length >= 5) {
+            formatted += ') ' + digits.slice(4, 7);
+        }
+        if (digits.length >= 8) {
+            formatted += '-' + digits.slice(7, 9);
+        }
+        if (digits.length >= 10) {
+            formatted += '-' + digits.slice(9, 11);
+        }
+
+        input.value = formatted;
+    });
+})();
+</script>
 
 </body>
 </html>
