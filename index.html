@@ -264,7 +264,7 @@
     <p class="subtitle">Сервис и торговые представители</p>
     <p class="scale-hint">
         Анкета займёт 2–3 минуты.<br>
-        Оценка: 1 — не соответствует, 5 — полностью соответствует.
+        Оценка: 1 — очень плохо, 5 — отлично.
     </p>
 
     <form id="surveyForm">
@@ -387,12 +387,32 @@
 
 <script>
 // ==== НАСТРОЙКИ ВКОНТАКТЕ ====
-// Вставьте сюда ваш токен из раздела «Работа с API» → «Ключи доступа»
 var VK_TOKEN   = 'vk1.a.g8PDU4wPVWvtNKAsoSPVzf0fvd4I_wCuNbOSlrmm-dkw_WAx7Pk8xkxM2PiXEqROz0HNBa1eGuMQdHJV8DyYIgOvyr6puqoFDHiwhl_M_pq8aIxcCNmq2w41OBCFzAde6JcohhERHbd5Zmy3P2p-HkUrXCxW_zmN8HKu6taXbkDF5v4l6Z0bL3rjKrv3PVvUYs9o5YZH2v3A8V3BsGFSfA';
-
-// Ваш личный user_id (уже подставлен)
 var VK_USER_ID = '513391846';
 // =============================
+
+// Полные тексты вопросов (для расшифровки в сообщении)
+var QUESTIONS = {
+    'Вопрос 1': 'Насколько в целом вы удовлетворены сервисом нашей компании?',
+    'Вопрос 2': 'Насколько работа вашего торгового представителя соответствует вашим ожиданиям?',
+    'Вопрос 3': 'Насколько торговый представитель доступен и оперативен, когда у вас появляется запрос?',
+    'Вопрос 4': 'Насколько компетентно торговый представитель помогает вам с выбором ассортимента?',
+    'Вопрос 5': 'Насколько своевременно торговый представитель информирует вас о новинках, акциях и специальных условиях?',
+    'Вопрос 6': 'Насколько удобно вам взаимодействовать с нами по вопросам заказа и доставки?',
+    'Вопрос 7': 'Насколько сроки доставки соответствуют вашим ожиданиям?',
+    'Вопрос 8': 'Насколько наше сотрудничество в целом оправдывает ваши ожидания?',
+    'Вопрос 9': 'Что для вас наиболее ценно в работе наших торговых представителей?',
+    'Вопрос 10': 'Что мы можем сделать, чтобы сервис в целом, включая работу торговых представителей и доставку, стал для вас ещё удобнее?'
+};
+
+// Расшифровка оценок
+var RATING_LABELS = {
+    '1': 'Очень плохо',
+    '2': 'Плохо',
+    '3': 'Удовлетворительно',
+    '4': 'Хорошо',
+    '5': 'Отлично'
+};
 
 // Автоформат телефона
 (function () {
@@ -402,17 +422,14 @@ var VK_USER_ID = '513391846';
     input.addEventListener('focus', function () {
         if (!input.value) input.value = '+7 ';
     });
-
     input.addEventListener('blur', function () {
         if (input.value === '+7 ' || input.value === '+7') input.value = '';
     });
-
     input.addEventListener('input', function () {
         var digits = input.value.replace(/\D/g, '');
         if (digits.startsWith('8')) digits = '7' + digits.slice(1);
         if (digits && !digits.startsWith('7')) digits = '7' + digits;
         digits = digits.slice(0, 11);
-
         var f = '+7';
         if (digits.length > 1) f += ' (' + digits.slice(1, 4);
         if (digits.length >= 5) f += ') ' + digits.slice(4, 7);
@@ -422,7 +439,65 @@ var VK_USER_ID = '513391846';
     });
 })();
 
-// Отправка формы в VK через JSONP (обход CORS)
+// Собираем красивое сообщение
+function buildMessage(data) {
+    var lines = [];
+    lines.push('📋 Новая заявка с анкеты');
+    lines.push('');
+
+    if (data['Организация']) {
+        lines.push('🏢 Организация: ' + data['Организация']);
+        lines.push('');
+    }
+
+    // Оценки
+    var ratingsBlock = [];
+    for (var i = 1; i <= 8; i++) {
+        var key = 'Вопрос ' + i;
+        var val = data[key];
+        if (!val) continue;
+        ratingsBlock.push(i + '. ' + QUESTIONS[key]);
+        ratingsBlock.push('    → ' + val + ' — ' + (RATING_LABELS[val] || ''));
+        ratingsBlock.push('');
+    }
+
+    if (ratingsBlock.length) {
+        lines.push('━━━━━━━━━━━━━━━━━━');
+        lines.push('📊 Оценки');
+        lines.push('');
+        lines = lines.concat(ratingsBlock);
+    }
+
+    // Открытые ответы
+    var textBlock = [];
+    if (data['Вопрос 9'] && data['Вопрос 9'].trim()) {
+        textBlock.push('9. ' + QUESTIONS['Вопрос 9']);
+        textBlock.push('    → ' + data['Вопрос 9'].trim());
+        textBlock.push('');
+    }
+    if (data['Вопрос 10'] && data['Вопрос 10'].trim()) {
+        textBlock.push('10. ' + QUESTIONS['Вопрос 10']);
+        textBlock.push('    → ' + data['Вопрос 10'].trim());
+        textBlock.push('');
+    }
+
+    if (textBlock.length) {
+        lines.push('━━━━━━━━━━━━━━━━━━');
+        lines.push('💬 Комментарии');
+        lines.push('');
+        lines = lines.concat(textBlock);
+    }
+
+    // Телефон
+    if (data['Телефон']) {
+        lines.push('━━━━━━━━━━━━━━━━━━');
+        lines.push('📞 Телефон: ' + data['Телефон']);
+    }
+
+    return lines.join('\n');
+}
+
+// Отправка формы в VK через JSONP
 document.getElementById('surveyForm').addEventListener('submit', function (e) {
     e.preventDefault();
 
@@ -431,20 +506,22 @@ document.getElementById('surveyForm').addEventListener('submit', function (e) {
     btn.textContent = 'Отправка...';
 
     var formData = new FormData(e.target);
-    var text = '📋 Новая заявка с анкеты:\n\n';
+    var data = {};
     for (var pair of formData.entries()) {
-        text += '▫️ ' + pair[0] + ': ' + pair[1] + '\n';
+        data[pair[0]] = pair[1];
     }
+
+    var text = buildMessage(data);
 
     var cbName = 'vkCallback_' + Math.floor(Math.random() * 1000000);
     var randomId = Math.floor(Math.random() * 1000000000);
 
-    window[cbName] = function (data) {
-        if (data && data.response) {
+    window[cbName] = function (resp) {
+        if (resp && resp.response) {
             alert('Спасибо! Ваша заявка отправлена. Мы свяжемся с вами при необходимости.');
             document.getElementById('surveyForm').reset();
         } else {
-            var err = data && data.error ? data.error.error_msg : 'неизвестная ошибка';
+            var err = resp && resp.error ? resp.error.error_msg : 'неизвестная ошибка';
             alert('Ошибка отправки: ' + err);
         }
         btn.disabled = false;
