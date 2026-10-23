@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex">
+<title>Спасибо!</title>
+<style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    @font-face {
+        font-family: "Barlow Logo";
+        src: url("fonts/barlow-200.woff2") format("woff2");
+        font-weight: 200;
+        font-display: swap;
+    }
+
+    body {
+        background: #000;
+        color: #e8e8e8;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+        font-size: 16px;
+        line-height: 1.6;
+        padding: 40px 20px;
+        min-height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .container {
+        position: relative;
+        max-width: 640px;
+        width: 100%;
+        background: #0a0a0a;
+        border-radius: 18px;
+        padding: 48px 32px 52px;
+        overflow: hidden;
+        text-align: center;
+        box-shadow: 0 0 80px rgba(255,255,255,0.04);
+        animation: rise 0.6s cubic-bezier(0.32, 0.72, 0, 1) both;
+    }
+
+    @keyframes rise {
+        from { opacity: 0; transform: translateY(16px); }
+        to   { opacity: 1; transform: none; }
+    }
+
+    .container::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        border-radius: 18px;
+        padding: 1px;
+        background: linear-gradient(130deg, #1a1a1a 0%, #1a1a1a 40%, rgba(255,255,255,0.7) 50%, #1a1a1a 60%, #1a1a1a 100%);
+        background-size: 300% 300%;
+        -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+        -webkit-mask-composite: xor;
+                mask-composite: exclude;
+        animation: borderShimmer 5s linear infinite;
+        pointer-events: none;
+    }
+
+    @keyframes borderShimmer {
+        0%   { background-position: 100% 0; }
+        100% { background-position: -100% 0; }
+    }
+
+    .logo-wrap { margin-bottom: 40px; }
+
+    .logo {
+        max-width: 200px;
+        width: 100%;
+        height: auto;
+        display: inline-block;
+        opacity: 0.95;
+        filter: drop-shadow(0 0 24px rgba(255,255,255,0.12));
+    }
+
+    .logo-city {
+        margin-top: 10px;
+        margin-right: -0.62em;
+        font-family: "Barlow Logo", "Helvetica Neue", Arial, sans-serif;
+        font-weight: 200;
+        font-size: 22px;
+        line-height: 1;
+        letter-spacing: 0.62em;
+        color: #fff;
+        opacity: 0.95;
+    }
+
+    .check {
+        width: 76px;
+        height: 76px;
+        margin: 0 auto 26px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #fff;
+        color: #000;
+        box-shadow: 0 0 48px rgba(255,255,255,0.25);
+        animation: pop 0.5s 0.2s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+    }
+    .check path { stroke-dasharray: 40; stroke-dashoffset: 40; animation: draw 0.5s 0.55s ease forwards; }
+
+    @keyframes pop  { from { transform: scale(0.4); opacity: 0; } to { transform: none; opacity: 1; } }
+    @keyframes draw { to { stroke-dashoffset: 0; } }
+
+    h1 {
+        font-size: 30px;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+        margin-bottom: 12px;
+        background: linear-gradient(100deg, #ffffff 0%, #ffffff 40%, #888888 50%, #ffffff 60%, #ffffff 100%);
+        background-size: 250% 100%;
+        -webkit-background-clip: text;
+                background-clip: text;
+        color: transparent;
+        -webkit-text-fill-color: transparent;
+        animation: textShimmer 4s linear infinite;
+    }
+
+    @keyframes textShimmer {
+        0%   { background-position: 200% 0; }
+        100% { background-position: -200% 0; }
+    }
+
+    .lead { color: #888; font-size: 15px; max-width: 400px; margin: 0 auto; }
+
+    .call {
+        display: none;
+        max-width: 400px;
+        margin: 28px auto 0;
+        padding: 18px 20px;
+        background: #111;
+        border: 1px solid #2a2a2a;
+        border-radius: 12px;
+    }
+    .call.show { display: block; }
+    .call-label { color: #777; font-size: 13px; margin-bottom: 4px; }
+    .call-time { color: #fff; font-size: 17px; font-weight: 500; }
+
+    @media (max-width: 520px) {
+        .container { padding: 36px 20px 40px; }
+        .logo { max-width: 160px; }
+        .logo-city { font-size: 17.6px; margin-top: 8px; }
+        .logo-wrap { margin-bottom: 32px; }
+        h1 { font-size: 26px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        *, *::before { animation: none !important; }
+        .check path { stroke-dashoffset: 0; }
+    }
+</style>
+</head>
+<body>
+
+<main class="container">
+    <div class="logo-wrap">
+        <img src="logo.png" alt="Darkside" class="logo">
+        <div class="logo-city">SAMARA</div>
+    </div>
+
+    <div class="check">
+        <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>
+    </div>
+
+    <h1>Спасибо!</h1>
+    <p class="lead">Ваши ответы получены — они помогут нам стать лучше. Если понадобится, мы с вами свяжемся.</p>
+
+    <div class="call" id="call">
+        <div class="call-label">Перезвоним в выбранное время</div>
+        <div class="call-time" id="callTime"></div>
+    </div>
+</main>
+
+<script>
+(function () {
+    var t = '';
+    try { t = sessionStorage.getItem('callTime') || ''; } catch (e) {}
+    if (!t) return;
+    document.getElementById('callTime').textContent = t.charAt(0).toUpperCase() + t.slice(1);
+    document.getElementById('call').classList.add('show');
+})();
+</script>
+
+</body>
+</html>
