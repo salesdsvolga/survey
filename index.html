@@ -373,6 +373,12 @@
         </div>
 
         <div class="field">
+            <label class="question" for="smmPhone">Телефон SMM-специалиста</label>
+            <p class="field-hint">Поделитесь контактом специалиста, который ведёт ваши соцсети, — так нам будет проще согласовывать совместные публикации и активности.</p>
+            <input type="tel" id="smmPhone" name="Телефон SMM" placeholder="+7 (___) ___-__-__" maxlength="18" inputmode="numeric" autocomplete="off">
+        </div>
+
+        <div class="field">
             <label class="question" for="phone">Номер телефона</label>
             <p class="field-hint">Если хотите, чтобы мы вам перезвонили — оставьте номер, и мы свяжемся в удобное для вас время.</p>
             <input type="tel" id="phone" name="Телефон" placeholder="+7 (___) ___-__-__" maxlength="18" inputmode="numeric" autocomplete="tel">
@@ -415,8 +421,8 @@ var RATING_LABELS = {
 };
 
 // Автоформат телефона
-(function () {
-    var input = document.getElementById('phone');
+['smmPhone', 'phone'].forEach(function (id) {
+    var input = document.getElementById(id);
     if (!input) return;
 
     input.addEventListener('focus', function () {
@@ -437,7 +443,7 @@ var RATING_LABELS = {
         if (digits.length >= 10) f += '-' + digits.slice(9, 11);
         input.value = f;
     });
-})();
+});
 
 // Собираем красивое сообщение
 function buildMessage(data) {
@@ -488,10 +494,11 @@ function buildMessage(data) {
         lines = lines.concat(textBlock);
     }
 
-    // Телефон
-    if (data['Телефон']) {
+    // Контакты
+    if (data['Телефон SMM'] || data['Телефон']) {
         lines.push('━━━━━━━━━━━━━━━━━━');
-        lines.push('📞 Телефон: ' + data['Телефон']);
+        if (data['Телефон SMM']) lines.push('📱 SMM-специалист: ' + data['Телефон SMM']);
+        if (data['Телефон']) lines.push('📞 Телефон: ' + data['Телефон']);
     }
 
     return lines.join('\n');
