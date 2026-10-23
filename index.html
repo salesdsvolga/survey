@@ -51,7 +51,30 @@
         100% { background-position: -100% 0; }
     }
 
+    /* Шрифт подписи под логотипом — Barlow Black (OFL), максимально близок к буквам логотипа */
+    @font-face {
+        font-family: "Barlow Logo";
+        src: url("fonts/barlow-900.woff2") format("woff2");
+        font-weight: 900;
+        font-display: swap;
+    }
+
     .logo-wrap { text-align: center; margin-bottom: 24px; }
+
+    /* Высота заглавных = высоте логотипа (200px × 222/1418 ≈ 31px) */
+    .logo-city {
+        margin-top: 12px;
+        font-family: "Barlow Logo", "Arial Black", sans-serif;
+        font-weight: 900;
+        font-size: 44.7px;
+        line-height: 1;
+        letter-spacing: 0.01em;
+        color: #fff;
+        opacity: 0.95;
+        filter: drop-shadow(0 0 24px rgba(255,255,255,0.12));
+        -webkit-user-select: none;
+                user-select: none;
+    }
 
     .logo {
         max-width: 200px;
@@ -353,6 +376,8 @@
     }
     .sheet-head button.done { color: #fff; font-weight: 600; }
 
+    .sheet-note { color: #8e8e93; font-size: 13px; text-align: center; margin: 2px 0 2px; }
+
     .cal-head { display: flex; align-items: center; justify-content: space-between; padding: 8px 4px 10px; }
     .cal-title { color: #fff; font-size: 17px; font-weight: 600; }
     .cal-nav { display: flex; gap: 4px; }
@@ -450,6 +475,7 @@
         font-variant-numeric: tabular-nums;
         cursor: pointer;
     }
+    .wheel.only-zero .wheel-item:not([data-i="0"]) { color: #48484a; }
     .wheel-sep { position: relative; line-height: 180px; color: #fff; font-size: 22px; padding: 0 2px; }
 
     .sheet-error { min-height: 20px; color: #ff6b6b; font-size: 13px; text-align: center; margin-top: 8px; }
@@ -458,6 +484,7 @@
         .container { padding: 28px 20px; }
         h1 { font-size: 21px; }
         .logo { max-width: 160px; }
+        .logo-city { font-size: 35.8px; margin-top: 10px; }
         .rating label { min-width: 44px; font-size: 14px; padding: 10px 0; }
     }
 </style>
@@ -468,6 +495,7 @@
 
     <div class="logo-wrap">
         <img src="logo.png" alt="Логотип компании" class="logo">
+        <div class="logo-city">SAMARA</div>
     </div>
 
     <h1>Ваш взгляд на сотрудничество</h1>
@@ -618,6 +646,7 @@
         <b id="sheetTitle">Время звонка</b>
         <button type="button" class="done" id="sheetDone">Готово</button>
     </div>
+    <p class="sheet-note">Звоним по будням с 11:00 до 21:00 по самарскому времени</p>
 
     <div class="cal-head">
         <div class="cal-title" id="calTitle"></div>
@@ -693,6 +722,7 @@ var RATING_LABELS = {
 });
 
 // Выбор даты и времени звонка: календарь + барабан
+// Только рабочее время: пн–пт, 11:00–21:00 по Самаре (UTC+4)
 (function () {
     var MONTHS     = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
     var MONTHS_GEN = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
@@ -700,6 +730,9 @@ var RATING_LABELS = {
     var MONTHS_AHEAD = 6;
     var ITEM = 36;
     var MIN_STEP = 5;
+    var WORK_START = 11;          // первый звонок — 11:00
+    var WORK_END = 21;            // последний звонок — 21:00
+    var TZ_OFFSET_MIN = 4 * 60;   // Самара, UTC+4
 
     var $ = function (id) { return document.getElementById(id); };
     var sheet = $('callSheet'), backdrop = $('sheetBackdrop');
@@ -714,24 +747,49 @@ var RATING_LABELS = {
     function startOfDay(d) { return new Date(d.getFullYear(), d.getMonth(), d.getDate()); }
     function sameDay(a, b) { return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate(); }
     function monthIndex(d) { return d.getFullYear() * 12 + d.getMonth(); }
+    function capitalize(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+
+    // Текущее время по Самаре, независимо от часового пояса посетителя
+    function nowSamara() {
+        return new Date(Date.now() + (TZ_OFFSET_MIN + new Date().getTimezoneOffset()) * 60000);
+    }
+    function isWorkDay(d) { var w = d.getDay(); return w >= 1 && w <= 5; }
+
+    // Ближайший свободный слот в этот день или null, если в этот день звонить уже нельзя
+    function firstSlot(day) {
+        if (!isWorkDay(day)) return null;
+        var now = nowSamara();
+        var today = startOfDay(now);
+        if (day < today) return null;
+        var slot = new Date(day.getFullYear(), day.getMonth(), day.getDate(), WORK_START, 0);
+        if (sameDay(day, now)) {
+            var soon = new Date(now.getTime() + MIN_STEP * 60000);
+            soon.setMinutes(Math.ceil(soon.getMinutes() / MIN_STEP) * MIN_STEP, 0, 0);
+            if (soon > slot) slot = soon;
+        }
+        var last = new Date(day.getFullYear(), day.getMonth(), day.getDate(), WORK_END, 0);
+        return slot <= last ? slot : null;
+    }
 
     function format(d) {
         var s = WEEKDAYS[d.getDay()] + ', ' + d.getDate() + ' ' + MONTHS_GEN[d.getMonth()];
-        if (d.getFullYear() !== new Date().getFullYear()) s += ' ' + d.getFullYear();
+        if (d.getFullYear() !== nowSamara().getFullYear()) s += ' ' + d.getFullYear();
         return s + ', ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
     }
-    function capitalize(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
 
     // ---- Барабан ----
-    function buildWheel(el, count, step) {
+    function buildWheel(el, count, first, step) {
         var html = '<div class="wheel-pad"></div>';
-        for (var i = 0; i < count; i++) html += '<div class="wheel-item" data-i="' + i + '">' + pad(i * step) + '</div>';
+        for (var i = 0; i < count; i++) html += '<div class="wheel-item" data-i="' + i + '">' + pad(first + i * step) + '</div>';
         el.innerHTML = html + '<div class="wheel-pad"></div>';
-        var ticking = false;
+        var ticking = false, settle;
         el.addEventListener('scroll', function () {
-            if (ticking) return;
-            ticking = true;
-            requestAnimationFrame(function () { ticking = false; paintWheel(el); updatePreview(); });
+            if (!ticking) {
+                ticking = true;
+                requestAnimationFrame(function () { ticking = false; paintWheel(el); onWheelChange(); });
+            }
+            clearTimeout(settle);
+            settle = setTimeout(onWheelSettle, 140);
         });
         el.addEventListener('click', function (e) {
             var it = e.target.closest('.wheel-item');
@@ -747,17 +805,31 @@ var RATING_LABELS = {
             items[i].style.opacity = Math.max(0.2, 1 - Math.abs(d) * 0.3);
         }
     }
-    function wheelValue(el) {
+    function wheelIndex(el) {
         var max = el.querySelectorAll('.wheel-item').length - 1;
         return Math.min(max, Math.max(0, Math.round(el.scrollTop / ITEM)));
     }
     function setWheel(el, i) { el.scrollTop = i * ITEM; paintWheel(el); }
 
-    buildWheel(wheelH, 24, 1);
-    buildWheel(wheelM, 60 / MIN_STEP, MIN_STEP);
+    buildWheel(wheelH, WORK_END - WORK_START + 1, WORK_START, 1);
+    buildWheel(wheelM, 60 / MIN_STEP, 0, MIN_STEP);
 
+    function pickedHour() { return WORK_START + wheelIndex(wheelH); }
     function currentPick() {
-        return new Date(picked.getFullYear(), picked.getMonth(), picked.getDate(), wheelValue(wheelH), wheelValue(wheelM) * MIN_STEP);
+        return new Date(picked.getFullYear(), picked.getMonth(), picked.getDate(), pickedHour(), wheelIndex(wheelM) * MIN_STEP);
+    }
+    function setTime(d) {
+        setWheel(wheelH, d.getHours() - WORK_START);
+        setWheel(wheelM, Math.floor(d.getMinutes() / MIN_STEP));
+    }
+
+    function onWheelChange() {
+        // В 21 час доступны только 00 минут
+        wheelM.classList.toggle('only-zero', pickedHour() === WORK_END);
+        updatePreview();
+    }
+    function onWheelSettle() {
+        if (pickedHour() === WORK_END && wheelIndex(wheelM) !== 0) wheelM.scrollTo({ top: 0, behavior: 'smooth' });
     }
     function updatePreview() {
         if (!picked) return;
@@ -767,7 +839,7 @@ var RATING_LABELS = {
 
     // ---- Календарь ----
     function renderCalendar() {
-        var today = startOfDay(new Date());
+        var today = startOfDay(nowSamara());
         var first = new Date(view.getFullYear(), view.getMonth(), 1);
         var offset = (first.getDay() + 6) % 7;
         var days = new Date(view.getFullYear(), view.getMonth() + 1, 0).getDate();
@@ -781,7 +853,7 @@ var RATING_LABELS = {
         for (var d = 1; d <= days; d++) {
             var date = new Date(view.getFullYear(), view.getMonth(), d);
             var cls = 'cal-day' + (sameDay(date, today) ? ' today' : '') + (picked && sameDay(date, picked) ? ' selected' : '');
-            html += '<button type="button" class="' + cls + '" data-d="' + d + '"' + (date < today ? ' disabled' : '') + '>' + d + '</button>';
+            html += '<button type="button" class="' + cls + '" data-d="' + d + '"' + (firstSlot(date) ? '' : ' disabled') + '>' + d + '</button>';
         }
         grid.innerHTML = html;
     }
@@ -790,25 +862,37 @@ var RATING_LABELS = {
         var b = e.target.closest('.cal-day');
         if (!b || b.disabled) return;
         picked = new Date(view.getFullYear(), view.getMonth(), +b.dataset.d);
+        // Если на выбранный день время уже прошло — переводим барабан на ближайший слот
+        var slot = firstSlot(picked);
+        if (slot && currentPick() < slot) setTime(slot);
         renderCalendar();
-        updatePreview();
+        onWheelChange();
     });
     prev.addEventListener('click', function () { view = new Date(view.getFullYear(), view.getMonth() - 1, 1); renderCalendar(); });
     next.addEventListener('click', function () { view = new Date(view.getFullYear(), view.getMonth() + 1, 1); renderCalendar(); });
 
     // ---- Открытие / закрытие ----
+    // По умолчанию — примерно через час, в ближайший рабочий день
     function defaultPick() {
-        var d = new Date(Date.now() + 60 * 60 * 1000);
-        d.setMinutes(Math.ceil(d.getMinutes() / MIN_STEP) * MIN_STEP, 0, 0);
-        var t = new Date();
-        // Рабочее время 9–21: рано утром предлагаем 10:00 сегодня, вечером — 10:00 завтра
-        if (!sameDay(d, t) || d.getHours() >= 21) return new Date(t.getFullYear(), t.getMonth(), t.getDate() + 1, 10, 0);
-        if (d.getHours() < 9) return new Date(t.getFullYear(), t.getMonth(), t.getDate(), 10, 0);
-        return d;
+        var now = nowSamara();
+        var inHour = new Date(now.getTime() + 60 * 60000);
+        inHour.setMinutes(Math.ceil(inHour.getMinutes() / MIN_STEP) * MIN_STEP, 0, 0);
+        for (var i = 0; i < 14; i++) {
+            var day = new Date(now.getFullYear(), now.getMonth(), now.getDate() + i);
+            var slot = firstSlot(day);
+            if (!slot) continue;
+            if (i === 0) {
+                var last = new Date(day.getFullYear(), day.getMonth(), day.getDate(), WORK_END, 0);
+                if (inHour > slot) slot = inHour <= last ? inHour : null;
+                if (!slot) continue;
+            }
+            return slot;
+        }
+        return firstSlot(startOfDay(now)) || new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1, WORK_START, 0);
     }
 
     function open() {
-        var start = chosen || defaultPick();
+        var start = (chosen && chosen > nowSamara()) ? chosen : defaultPick();
         picked = startOfDay(start);
         view = new Date(start.getFullYear(), start.getMonth(), 1);
         renderCalendar();
@@ -816,9 +900,8 @@ var RATING_LABELS = {
         sheet.classList.add('open');
         backdrop.classList.add('open');
         document.body.style.overflow = 'hidden';
-        setWheel(wheelH, start.getHours());
-        setWheel(wheelM, Math.floor(start.getMinutes() / MIN_STEP));
-        updatePreview();
+        setTime(start);
+        onWheelChange();
     }
     function close() {
         sheet.classList.remove('open');
@@ -839,7 +922,9 @@ var RATING_LABELS = {
     document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && sheet.classList.contains('open')) close(); });
     $('sheetDone').addEventListener('click', function () {
         var d = currentPick();
-        if (d < new Date()) { error.textContent = 'Это время уже прошло — выберите другое.'; return; }
+        if (!isWorkDay(d)) { error.textContent = 'Звоним только в будние дни — выберите пн–пт.'; return; }
+        if (d.getHours() === WORK_END && d.getMinutes() > 0) { error.textContent = 'Последний звонок — в 21:00.'; return; }
+        if (d <= nowSamara()) { error.textContent = 'Это время уже прошло — выберите другое.'; return; }
         apply(d);
         close();
     });
