@@ -157,8 +157,17 @@
 
     textarea { min-height: 100px; resize: vertical; }
 
-    .rating { display: flex; gap: 10px; flex-wrap: wrap; }
-    .rating input[type="radio"] { display: none; }
+    .rating { position: relative; display: flex; gap: 10px; flex-wrap: wrap; }
+    /* Радиокнопки скрыты визуально, но не через display:none — иначе браузер не может подсказать про пропущенный вопрос */
+    .rating input[type="radio"] {
+        position: absolute;
+        left: 50%;
+        bottom: 0;
+        width: 1px;
+        height: 1px;
+        opacity: 0;
+        pointer-events: none;
+    }
 
     .rating label {
         position: relative;
@@ -173,10 +182,15 @@
         color: #999;
         font-weight: 600;
         font-size: 15px;
-        transition: all 0.25s ease;
-        user-select: none;
+        transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease, box-shadow 0.12s ease, transform 0.1s ease;
+        -webkit-user-select: none;
+                user-select: none;
+        -webkit-tap-highlight-color: transparent;
+        touch-action: manipulation;   /* без задержки на двойной тап */
         overflow: hidden;
     }
+
+    .rating label:active { transform: scale(0.94); }
 
     .rating label::after {
         content: "";
@@ -188,14 +202,17 @@
         pointer-events: none;
     }
 
-    .rating label:hover::after { animation: tileShimmer 0.9s ease; }
 
     @keyframes tileShimmer {
         0%   { left: -80%; }
         100% { left: 130%; }
     }
 
-    .rating label:hover { border-color: #666; color: #eee; background: #161616; }
+    /* Наведение — только для мыши: на телефоне hover «залипает» и iPhone требует второго нажатия */
+    @media (hover: hover) and (pointer: fine) {
+        .rating label:hover::after { animation: tileShimmer 0.9s ease; }
+        .rating label:hover { border-color: #666; color: #eee; background: #161616; }
+    }
 
     .rating input[type="radio"]:checked + label {
         background: #fff;
@@ -576,7 +593,7 @@
     <form id="surveyForm">
 
         <div class="field">
-            <label class="question" for="company">Название вашей организации<span class="required">*</span></label>
+            <label class="question" for="company">Название вашего магазина/лаунжа<span class="required">*</span></label>
             <input type="text" id="company" name="Организация" required>
         </div>
 
@@ -1015,7 +1032,7 @@ function buildMessage(data) {
     lines.push('');
 
     if (data['Организация'] || (data['Адрес'] && data['Адрес'].trim())) {
-        if (data['Организация']) lines.push('🏢 Организация: ' + data['Организация']);
+        if (data['Организация']) lines.push('🏢 Магазин/лаунж: ' + data['Организация']);
         if (data['Адрес'] && data['Адрес'].trim()) lines.push('📍 Адрес: ' + data['Адрес'].trim());
         lines.push('');
     }
