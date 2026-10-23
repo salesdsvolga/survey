@@ -166,6 +166,17 @@
 
     input::placeholder { color: #555; }
 
+    /* Своя проверка обязательных полей: встроенные браузеры (Telegram и др.) не показывают системные подсказки */
+    .field.invalid input, .field.invalid textarea { border-color: #ff6b6b; box-shadow: 0 0 0 3px rgba(255,107,107,0.12); }
+    .field-error { display: none; color: #ff6b6b; font-size: 13px; margin-top: 8px; }
+    .field.invalid .field-error { display: block; }
+    .field.invalid { animation: shake 0.35s ease; }
+    @keyframes shake {
+        0%, 100% { transform: none; }
+        25% { transform: translateX(-5px); }
+        75% { transform: translateX(5px); }
+    }
+
     textarea { min-height: 100px; resize: vertical; }
 
     .rating { position: relative; display: flex; gap: 10px; flex-wrap: wrap; }
@@ -601,7 +612,7 @@
         Оценка: 1 — очень плохо, 5 — отлично.
     </p>
 
-    <form id="surveyForm">
+    <form id="surveyForm" novalidate>
 
         <div class="field">
             <label class="question" for="company">Название вашего магазина/лаунжа<span class="required">*</span></label>
@@ -1136,8 +1147,44 @@ document.querySelectorAll('.rating label').forEach(function (label) {
 });
 
 // Отправка формы в VK через JSONP
+// Проверка обязательных полей с понятной подсказкой под полем
+function validateForm(form) {
+    var firstBad = null;
+    form.querySelectorAll('[required]').forEach(function (input) {
+        var field = input.closest('.field');
+        if (!field) return;
+        var bad = !input.value.trim();
+        var msg = field.querySelector('.field-error');
+        if (!msg) {
+            msg = document.createElement('div');
+            msg.className = 'field-error';
+            msg.textContent = 'Заполните это поле';
+            field.appendChild(msg);
+        }
+        field.classList.remove('invalid');
+        if (bad) {
+            void field.offsetWidth;   // перезапуск анимации
+            field.classList.add('invalid');
+            if (!firstBad) firstBad = input;
+        }
+    });
+    if (firstBad) {
+        firstBad.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        setTimeout(function () { try { firstBad.focus({ preventScroll: true }); } catch (e) {} }, 350);
+        return false;
+    }
+    return true;
+}
+document.querySelectorAll('#surveyForm [required]').forEach(function (input) {
+    input.addEventListener('input', function () {
+        var field = input.closest('.field');
+        if (field && input.value.trim()) field.classList.remove('invalid');
+    });
+});
+
 document.getElementById('surveyForm').addEventListener('submit', function (e) {
     e.preventDefault();
+    if (!validateForm(e.target)) return;
 
     var btn = document.getElementById('submitBtn');
     btn.disabled = true;
