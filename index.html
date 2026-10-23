@@ -480,6 +480,74 @@
 
     .sheet-error { min-height: 20px; color: #ff6b6b; font-size: 13px; text-align: center; margin-top: 8px; }
 
+    /* Окно после отправки */
+    .notice {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        width: calc(100% - 40px);
+        max-width: 380px;
+        padding: 36px 28px 28px;
+        background: #0a0a0a;
+        border-radius: 18px;
+        text-align: center;
+        box-shadow: 0 0 80px rgba(255,255,255,0.06);
+        opacity: 0;
+        pointer-events: none;
+        transform: translate(-50%, -46%) scale(0.96);
+        transition: opacity 0.3s ease, transform 0.35s cubic-bezier(0.32, 0.72, 0, 1);
+        z-index: 101;
+    }
+    .notice.open { opacity: 1; pointer-events: auto; transform: translate(-50%, -50%); }
+
+    .notice::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        border-radius: 18px;
+        padding: 1px;
+        background: linear-gradient(130deg, #1a1a1a 0%, #1a1a1a 40%, rgba(255,255,255,0.7) 50%, #1a1a1a 60%, #1a1a1a 100%);
+        background-size: 300% 300%;
+        -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+        -webkit-mask-composite: xor;
+                mask-composite: exclude;
+        animation: borderShimmer 5s linear infinite;
+        pointer-events: none;
+    }
+
+    .notice-icon {
+        width: 64px;
+        height: 64px;
+        margin: 0 auto 20px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #fff;
+        color: #000;
+        box-shadow: 0 0 40px rgba(255,255,255,0.25);
+    }
+    .notice.is-error .notice-icon { background: #1c1c1e; color: #ff6b6b; box-shadow: none; border: 1px solid #333; }
+    .notice-icon path { stroke-dasharray: 40; stroke-dashoffset: 40; }
+    .notice.open .notice-icon path { animation: drawMark 0.5s 0.2s ease forwards; }
+    @keyframes drawMark { to { stroke-dashoffset: 0; } }
+
+    .notice-title {
+        font-size: 22px;
+        font-weight: 600;
+        margin-bottom: 10px;
+        background: linear-gradient(100deg, #ffffff 0%, #ffffff 40%, #888888 50%, #ffffff 60%, #ffffff 100%);
+        background-size: 250% 100%;
+        -webkit-background-clip: text;
+                background-clip: text;
+        color: transparent;
+        -webkit-text-fill-color: transparent;
+        animation: textShimmer 4s linear infinite;
+    }
+    .notice-text { color: #888; font-size: 14px; line-height: 1.6; margin-bottom: 26px; }
+    .notice-text b { color: #ddd; font-weight: 500; }
+    .notice button.shimmer { padding: 15px 24px; font-size: 14px; }
+
     @media (max-width: 520px) {
         .container { padding: 28px 20px; }
         h1 { font-size: 21px; }
@@ -513,8 +581,8 @@
         </div>
 
         <div class="field">
-            <label class="question" for="address">Адрес</label>
-            <input type="text" id="address" name="Адрес" placeholder="Улица, дом" autocomplete="street-address">
+            <label class="question" for="address">Адрес<span class="required">*</span></label>
+            <input type="text" id="address" name="Адрес" placeholder="Улица, дом" autocomplete="street-address" required>
         </div>
 
         <div class="field">
@@ -644,6 +712,14 @@
 </div>
 
 <div class="sheet-backdrop" id="sheetBackdrop"></div>
+
+<div class="sheet-backdrop" id="noticeBackdrop"></div>
+<div class="notice" id="notice" role="alertdialog" aria-modal="true" aria-labelledby="noticeTitle" aria-describedby="noticeText">
+    <div class="notice-icon" id="noticeIcon"></div>
+    <div class="notice-title" id="noticeTitle"></div>
+    <p class="notice-text" id="noticeText"></p>
+    <button type="button" class="shimmer" id="noticeBtn">Хорошо</button>
+</div>
 <div class="sheet" id="callSheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
     <div class="sheet-grabber"></div>
     <div class="sheet-head">
@@ -993,6 +1069,36 @@ function buildMessage(data) {
     return lines.join('\n');
 }
 
+// Красивое окно вместо alert
+var ICON_OK  = '<svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+var ICON_ERR = '<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 6v8M12 18.5v0.01"/></svg>';
+
+function showNotice(ok, title, html) {
+    var box = document.getElementById('notice'), bd = document.getElementById('noticeBackdrop');
+    document.getElementById('noticeIcon').innerHTML = ok ? ICON_OK : ICON_ERR;
+    document.getElementById('noticeTitle').textContent = title;
+    document.getElementById('noticeText').innerHTML = html;
+    document.getElementById('noticeBtn').textContent = ok ? 'Хорошо' : 'Понятно';
+    box.classList.toggle('is-error', !ok);
+    box.classList.add('open');
+    bd.classList.add('open');
+    document.body.style.overflow = 'hidden';
+    document.getElementById('noticeBtn').focus();
+}
+function hideNotice() {
+    document.getElementById('notice').classList.remove('open');
+    document.getElementById('noticeBackdrop').classList.remove('open');
+    document.body.style.overflow = '';
+}
+function escapeHtml(s) {
+    return String(s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; });
+}
+document.getElementById('noticeBtn').addEventListener('click', hideNotice);
+document.getElementById('noticeBackdrop').addEventListener('click', hideNotice);
+document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && document.getElementById('notice').classList.contains('open')) hideNotice();
+});
+
 // Отправка формы в VK через JSONP
 document.getElementById('surveyForm').addEventListener('submit', function (e) {
     e.preventDefault();
@@ -1014,11 +1120,14 @@ document.getElementById('surveyForm').addEventListener('submit', function (e) {
 
     window[cbName] = function (resp) {
         if (resp && resp.response) {
-            alert('Спасибо! Ваша заявка отправлена. Мы свяжемся с вами при необходимости.');
+            var callAt = data['Время звонка'];
+            showNotice(true, 'Спасибо!', callAt
+                ? 'Ваши ответы получены. Перезвоним в выбранное время:<br><b>' + escapeHtml(callAt.charAt(0).toUpperCase() + callAt.slice(1)) + '</b>'
+                : 'Ваши ответы получены — они помогут нам стать лучше. Если понадобится, мы с вами свяжемся.');
             document.getElementById('surveyForm').reset();
         } else {
             var err = resp && resp.error ? resp.error.error_msg : 'неизвестная ошибка';
-            alert('Ошибка отправки: ' + err);
+            showNotice(false, 'Не удалось отправить', 'Попробуйте ещё раз через минуту.<br><span style="color:#555">' + escapeHtml(err) + '</span>');
         }
         btn.disabled = false;
         btn.textContent = 'Отправить';
@@ -1035,7 +1144,7 @@ document.getElementById('surveyForm').addEventListener('submit', function (e) {
         + '&v=5.199'
         + '&callback=' + cbName;
     script.onerror = function () {
-        alert('Ошибка соединения с VK. Попробуйте ещё раз.');
+        showNotice(false, 'Нет соединения', 'Проверьте интернет и попробуйте отправить ещё раз — ваши ответы сохранились в форме.');
         btn.disabled = false;
         btn.textContent = 'Отправить';
         delete window[cbName];
