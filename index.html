@@ -508,8 +508,13 @@
     <form id="surveyForm">
 
         <div class="field">
-            <label class="question" for="company">Наименование вашей организации<span class="required">*</span></label>
+            <label class="question" for="company">Название вашей организации<span class="required">*</span></label>
             <input type="text" id="company" name="Организация" required>
+        </div>
+
+        <div class="field">
+            <label class="question" for="address">Адрес</label>
+            <input type="text" id="address" name="Адрес" placeholder="Улица, дом" autocomplete="street-address">
         </div>
 
         <div class="field">
@@ -933,8 +938,9 @@ function buildMessage(data) {
     lines.push('📋 Новая заявка с анкеты');
     lines.push('');
 
-    if (data['Организация']) {
-        lines.push('🏢 Организация: ' + data['Организация']);
+    if (data['Организация'] || (data['Адрес'] && data['Адрес'].trim())) {
+        if (data['Организация']) lines.push('🏢 Организация: ' + data['Организация']);
+        if (data['Адрес'] && data['Адрес'].trim()) lines.push('📍 Адрес: ' + data['Адрес'].trim());
         lines.push('');
     }
 
