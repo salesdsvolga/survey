@@ -51,24 +51,24 @@
         100% { background-position: -100% 0; }
     }
 
-    /* Шрифт подписи под логотипом — Barlow Black (OFL), максимально близок к буквам логотипа */
+    /* Подпись под логотипом — тонкий Barlow ExtraLight (OFL): та же гарнитура, что у букв логотипа */
     @font-face {
         font-family: "Barlow Logo";
-        src: url("fonts/barlow-900.woff2") format("woff2");
-        font-weight: 900;
+        src: url("fonts/barlow-200.woff2") format("woff2");
+        font-weight: 200;
         font-display: swap;
     }
 
     .logo-wrap { text-align: center; margin-bottom: 24px; }
 
-    /* Высота заглавных = высоте логотипа (200px × 222/1418 ≈ 31px) */
     .logo-city {
-        margin-top: 12px;
-        font-family: "Barlow Logo", "Arial Black", sans-serif;
-        font-weight: 900;
-        font-size: 44.7px;
+        margin-top: 10px;
+        margin-right: -0.62em;   /* компенсирует разрядку после последней буквы, чтобы надпись стояла ровно по центру */
+        font-family: "Barlow Logo", "Helvetica Neue", Arial, sans-serif;
+        font-weight: 200;
+        font-size: 22px;
         line-height: 1;
-        letter-spacing: 0.01em;
+        letter-spacing: 0.62em;
         color: #fff;
         opacity: 0.95;
         filter: drop-shadow(0 0 24px rgba(255,255,255,0.12));
@@ -484,7 +484,7 @@
         .container { padding: 28px 20px; }
         h1 { font-size: 21px; }
         .logo { max-width: 160px; }
-        .logo-city { font-size: 35.8px; margin-top: 10px; }
+        .logo-city { font-size: 17.6px; margin-top: 8px; }
         .rating label { min-width: 44px; font-size: 14px; padding: 10px 0; }
     }
 </style>
@@ -646,7 +646,7 @@
         <b id="sheetTitle">Время звонка</b>
         <button type="button" class="done" id="sheetDone">Готово</button>
     </div>
-    <p class="sheet-note">Звоним по будням с 11:00 до 21:00 по самарскому времени</p>
+    <p class="sheet-note">Звоним по будням с 11:00 до 21:00</p>
 
     <div class="cal-head">
         <div class="cal-title" id="calTitle"></div>
@@ -722,7 +722,7 @@ var RATING_LABELS = {
 });
 
 // Выбор даты и времени звонка: календарь + барабан
-// Только рабочее время: пн–пт, 11:00–21:00 по Самаре (UTC+4)
+// Только рабочее время: пн–пт, 11:00–21:00 (по часам устройства посетителя)
 (function () {
     var MONTHS     = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
     var MONTHS_GEN = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
@@ -732,7 +732,6 @@ var RATING_LABELS = {
     var MIN_STEP = 5;
     var WORK_START = 11;          // первый звонок — 11:00
     var WORK_END = 21;            // последний звонок — 21:00
-    var TZ_OFFSET_MIN = 4 * 60;   // Самара, UTC+4
 
     var $ = function (id) { return document.getElementById(id); };
     var sheet = $('callSheet'), backdrop = $('sheetBackdrop');
@@ -749,16 +748,12 @@ var RATING_LABELS = {
     function monthIndex(d) { return d.getFullYear() * 12 + d.getMonth(); }
     function capitalize(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
 
-    // Текущее время по Самаре, независимо от часового пояса посетителя
-    function nowSamara() {
-        return new Date(Date.now() + (TZ_OFFSET_MIN + new Date().getTimezoneOffset()) * 60000);
-    }
     function isWorkDay(d) { var w = d.getDay(); return w >= 1 && w <= 5; }
 
     // Ближайший свободный слот в этот день или null, если в этот день звонить уже нельзя
     function firstSlot(day) {
         if (!isWorkDay(day)) return null;
-        var now = nowSamara();
+        var now = new Date();
         var today = startOfDay(now);
         if (day < today) return null;
         var slot = new Date(day.getFullYear(), day.getMonth(), day.getDate(), WORK_START, 0);
@@ -773,7 +768,7 @@ var RATING_LABELS = {
 
     function format(d) {
         var s = WEEKDAYS[d.getDay()] + ', ' + d.getDate() + ' ' + MONTHS_GEN[d.getMonth()];
-        if (d.getFullYear() !== nowSamara().getFullYear()) s += ' ' + d.getFullYear();
+        if (d.getFullYear() !== new Date().getFullYear()) s += ' ' + d.getFullYear();
         return s + ', ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
     }
 
@@ -839,7 +834,7 @@ var RATING_LABELS = {
 
     // ---- Календарь ----
     function renderCalendar() {
-        var today = startOfDay(nowSamara());
+        var today = startOfDay(new Date());
         var first = new Date(view.getFullYear(), view.getMonth(), 1);
         var offset = (first.getDay() + 6) % 7;
         var days = new Date(view.getFullYear(), view.getMonth() + 1, 0).getDate();
@@ -874,7 +869,7 @@ var RATING_LABELS = {
     // ---- Открытие / закрытие ----
     // По умолчанию — примерно через час, в ближайший рабочий день
     function defaultPick() {
-        var now = nowSamara();
+        var now = new Date();
         var inHour = new Date(now.getTime() + 60 * 60000);
         inHour.setMinutes(Math.ceil(inHour.getMinutes() / MIN_STEP) * MIN_STEP, 0, 0);
         for (var i = 0; i < 14; i++) {
@@ -892,7 +887,7 @@ var RATING_LABELS = {
     }
 
     function open() {
-        var start = (chosen && chosen > nowSamara()) ? chosen : defaultPick();
+        var start = (chosen && chosen > new Date()) ? chosen : defaultPick();
         picked = startOfDay(start);
         view = new Date(start.getFullYear(), start.getMonth(), 1);
         renderCalendar();
@@ -924,7 +919,7 @@ var RATING_LABELS = {
         var d = currentPick();
         if (!isWorkDay(d)) { error.textContent = 'Звоним только в будние дни — выберите пн–пт.'; return; }
         if (d.getHours() === WORK_END && d.getMinutes() > 0) { error.textContent = 'Последний звонок — в 21:00.'; return; }
-        if (d <= nowSamara()) { error.textContent = 'Это время уже прошло — выберите другое.'; return; }
+        if (d <= new Date()) { error.textContent = 'Это время уже прошло — выберите другое.'; return; }
         apply(d);
         close();
     });
