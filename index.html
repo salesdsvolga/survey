@@ -793,6 +793,25 @@ var VK_TOKEN   = 'vk1.a.g8PDU4wPVWvtNKAsoSPVzf0fvd4I_wCuNbOSlrmm-dkw_WAx7Pk8xkxM
 var VK_USER_ID = '513391846';
 // =============================
 
+// ==== GOOGLE-ТАБЛИЦА (копия ответов) ====
+var SHEETS_URL = 'https://script.google.com/macros/s/AKfycbzdeB8iCEm8KZ2E9BcnHgnY9fZ8pJg3StX5Pzd76tPwD-G7ihKXcsE_-UDzx8gmo7k_/exec';
+// ========================================
+
+// Отправляет копию ответов в Google-таблицу. Ответ Google прочитать нельзя (no-cors),
+// поэтому сбой таблицы никак не мешает отправке в ВК. keepalive — запрос долетит,
+// даже если страница уже перешла на «Спасибо».
+function sendToSheets(data) {
+    if (!SHEETS_URL || !window.fetch) return;
+    try {
+        fetch(SHEETS_URL, {
+            method: 'POST',
+            mode: 'no-cors',
+            keepalive: true,
+            body: new URLSearchParams(data)
+        }).catch(function () {});
+    } catch (e) {}
+}
+
 // Полные тексты вопросов (для расшифровки в сообщении)
 var QUESTIONS = {
     'Вопрос 1': 'Насколько в целом вы удовлетворены сервисом нашей компании?',
@@ -1197,6 +1216,7 @@ document.getElementById('surveyForm').addEventListener('submit', function (e) {
     }
 
     var text = buildMessage(data);
+    sendToSheets(data);
 
     var cbName = 'vkCallback_' + Math.floor(Math.random() * 1000000);
     var randomId = Math.floor(Math.random() * 1000000000);
