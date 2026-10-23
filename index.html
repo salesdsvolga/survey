@@ -244,6 +244,216 @@
         100% { left: 140%; }
     }
 
+    /* Кнопка выбора времени звонка */
+    .call-row { display: flex; gap: 8px; margin-top: 12px; }
+
+    .call-btn {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 13px 16px;
+        background: transparent;
+        border: 1px dashed #333;
+        border-radius: 10px;
+        color: #bbb;
+        font-family: inherit;
+        font-size: 14px;
+        text-align: left;
+        cursor: pointer;
+        transition: border-color 0.25s, color 0.25s, background 0.25s;
+    }
+    .call-btn svg { flex-shrink: 0; opacity: 0.8; }
+    .call-btn .opt { margin-left: auto; color: #555; font-size: 12px; }
+    .call-btn:hover { border-color: #666; color: #fff; background: #111; }
+    .call-btn.is-set { border-style: solid; border-color: #555; color: #fff; background: #111; }
+    .call-btn.is-set .opt { display: none; }
+
+    .call-clear {
+        display: none;
+        width: 48px;
+        background: #111;
+        border: 1px solid #2a2a2a;
+        border-radius: 10px;
+        color: #888;
+        font-size: 20px;
+        cursor: pointer;
+        transition: color 0.25s, border-color 0.25s;
+    }
+    .call-clear:hover { color: #fff; border-color: #666; }
+    .call-row.is-set .call-clear { display: block; }
+
+    /* Всплывающее окно с календарём и барабаном */
+    .sheet-backdrop {
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.6);
+        -webkit-backdrop-filter: blur(6px);
+                backdrop-filter: blur(6px);
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.3s;
+        z-index: 100;
+    }
+    .sheet-backdrop.open { opacity: 1; pointer-events: auto; }
+
+    .sheet {
+        position: fixed;
+        left: 50%;
+        bottom: 0;
+        width: 100%;
+        max-width: 400px;
+        max-height: 94vh;
+        overflow-y: auto;
+        background: #1c1c1e;
+        border-radius: 16px 16px 0 0;
+        padding: 8px 16px calc(20px + env(safe-area-inset-bottom));
+        transform: translate(-50%, 105%);
+        transition: transform 0.4s cubic-bezier(0.32, 0.72, 0, 1);
+        z-index: 101;
+        -webkit-user-select: none;
+                user-select: none;
+    }
+    .sheet.open { transform: translate(-50%, 0); }
+
+    @media (min-width: 521px) {
+        .sheet {
+            top: 50%;
+            bottom: auto;
+            border-radius: 16px;
+            padding-bottom: 20px;
+            opacity: 0;
+            pointer-events: none;
+            transform: translate(-50%, -46%) scale(0.97);
+            transition: transform 0.3s ease, opacity 0.3s ease;
+        }
+        .sheet.open { opacity: 1; pointer-events: auto; transform: translate(-50%, -50%); }
+        .sheet-grabber { display: none; }
+    }
+
+    .sheet-grabber { width: 36px; height: 5px; border-radius: 3px; background: #48484a; margin: 0 auto 6px; }
+
+    .sheet-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 4px 0 10px;
+        border-bottom: 1px solid #2c2c2e;
+        margin-bottom: 6px;
+    }
+    .sheet-head b { color: #fff; font-size: 16px; font-weight: 600; }
+    .sheet-head button {
+        background: none;
+        border: none;
+        color: #aaa;
+        font-family: inherit;
+        font-size: 16px;
+        padding: 6px 2px;
+        cursor: pointer;
+    }
+    .sheet-head button.done { color: #fff; font-weight: 600; }
+
+    .cal-head { display: flex; align-items: center; justify-content: space-between; padding: 8px 4px 10px; }
+    .cal-title { color: #fff; font-size: 17px; font-weight: 600; }
+    .cal-nav { display: flex; gap: 4px; }
+    .cal-nav button {
+        width: 36px;
+        height: 36px;
+        border: none;
+        border-radius: 50%;
+        background: none;
+        color: #fff;
+        font-size: 22px;
+        line-height: 1;
+        cursor: pointer;
+    }
+    .cal-nav button:hover:not(:disabled) { background: #2c2c2e; }
+    .cal-nav button:disabled { color: #3a3a3c; cursor: default; }
+
+    .cal-week, .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; }
+    .cal-week span { color: #8e8e93; font-size: 12px; font-weight: 600; padding-bottom: 4px; }
+
+    .cal-day {
+        position: relative;
+        width: 100%;
+        max-width: 42px;
+        aspect-ratio: 1;
+        margin: 1px auto;
+        border: none;
+        border-radius: 50%;
+        background: none;
+        color: #fff;
+        font-family: inherit;
+        font-size: 18px;
+        cursor: pointer;
+        transition: background 0.15s;
+    }
+    .cal-day:hover:not(:disabled):not(.selected) { background: #2c2c2e; }
+    .cal-day.today::after {
+        content: "";
+        position: absolute;
+        left: 50%;
+        bottom: 5px;
+        width: 4px;
+        height: 4px;
+        margin-left: -2px;
+        border-radius: 50%;
+        background: #fff;
+    }
+    .cal-day.selected { background: #fff; color: #000; font-weight: 600; }
+    .cal-day.selected.today::after { background: #000; }
+    .cal-day:disabled { color: #3a3a3c; cursor: default; }
+
+    .time-label {
+        display: flex;
+        justify-content: space-between;
+        color: #8e8e93;
+        font-size: 13px;
+        margin-top: 12px;
+        padding-top: 12px;
+        border-top: 1px solid #2c2c2e;
+    }
+
+    .wheels { position: relative; display: flex; justify-content: center; height: 180px; margin-top: 4px; }
+    .wheels::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        right: 0;
+        top: 72px;
+        height: 36px;
+        border-radius: 8px;
+        background: rgba(255,255,255,0.09);
+        pointer-events: none;
+    }
+
+    .wheel {
+        width: 80px;
+        height: 180px;
+        overflow-y: scroll;
+        scroll-snap-type: y mandatory;
+        overscroll-behavior: contain;
+        scrollbar-width: none;
+        perspective: 500px;
+        -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 30%, #000 70%, transparent 100%);
+                mask-image: linear-gradient(to bottom, transparent 0%, #000 30%, #000 70%, transparent 100%);
+    }
+    .wheel::-webkit-scrollbar { display: none; }
+    .wheel-pad { height: 72px; }
+    .wheel-item {
+        height: 36px;
+        line-height: 36px;
+        text-align: center;
+        scroll-snap-align: center;
+        color: #fff;
+        font-size: 22px;
+        font-variant-numeric: tabular-nums;
+        cursor: pointer;
+    }
+    .wheel-sep { position: relative; line-height: 180px; color: #fff; font-size: 22px; padding: 0 2px; }
+
+    .sheet-error { min-height: 20px; color: #ff6b6b; font-size: 13px; text-align: center; margin-top: 8px; }
+
     @media (max-width: 520px) {
         .container { padding: 28px 20px; }
         h1 { font-size: 21px; }
@@ -379,9 +589,18 @@
         </div>
 
         <div class="field">
-            <label class="question" for="phone">Номер телефона</label>
+            <label class="question" for="phone">Ваш номер телефона</label>
             <p class="field-hint">Если хотите, чтобы мы вам перезвонили — оставьте номер, и мы свяжемся в удобное для вас время.</p>
             <input type="tel" id="phone" name="Телефон" placeholder="+7 (___) ___-__-__" maxlength="18" inputmode="numeric" autocomplete="tel">
+            <div class="call-row" id="callRow">
+                <button type="button" class="call-btn" id="callBtn">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/></svg>
+                    <span id="callBtnText">Указать дату и время звонка</span>
+                    <span class="opt">по желанию</span>
+                </button>
+                <button type="button" class="call-clear" id="callClear" aria-label="Убрать время звонка">×</button>
+            </div>
+            <input type="hidden" id="callTime" name="Время звонка" value="">
         </div>
 
         <div class="submit-wrap">
@@ -389,6 +608,34 @@
         </div>
 
     </form>
+</div>
+
+<div class="sheet-backdrop" id="sheetBackdrop"></div>
+<div class="sheet" id="callSheet" role="dialog" aria-modal="true" aria-labelledby="sheetTitle">
+    <div class="sheet-grabber"></div>
+    <div class="sheet-head">
+        <button type="button" id="sheetCancel">Отмена</button>
+        <b id="sheetTitle">Время звонка</b>
+        <button type="button" class="done" id="sheetDone">Готово</button>
+    </div>
+
+    <div class="cal-head">
+        <div class="cal-title" id="calTitle"></div>
+        <div class="cal-nav">
+            <button type="button" id="calPrev" aria-label="Предыдущий месяц">‹</button>
+            <button type="button" id="calNext" aria-label="Следующий месяц">›</button>
+        </div>
+    </div>
+    <div class="cal-week"><span>Пн</span><span>Вт</span><span>Ср</span><span>Чт</span><span>Пт</span><span>Сб</span><span>Вс</span></div>
+    <div class="cal-grid" id="calGrid"></div>
+
+    <div class="time-label"><span>Время</span><span id="timePreview"></span></div>
+    <div class="wheels">
+        <div class="wheel" id="wheelH"></div>
+        <div class="wheel-sep">:</div>
+        <div class="wheel" id="wheelM"></div>
+    </div>
+    <div class="sheet-error" id="sheetError"></div>
 </div>
 
 <script>
@@ -445,6 +692,161 @@ var RATING_LABELS = {
     });
 });
 
+// Выбор даты и времени звонка: календарь + барабан
+(function () {
+    var MONTHS     = ['Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+    var MONTHS_GEN = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
+    var WEEKDAYS   = ['воскресенье','понедельник','вторник','среда','четверг','пятница','суббота'];
+    var MONTHS_AHEAD = 6;
+    var ITEM = 36;
+    var MIN_STEP = 5;
+
+    var $ = function (id) { return document.getElementById(id); };
+    var sheet = $('callSheet'), backdrop = $('sheetBackdrop');
+    var row = $('callRow'), btnText = $('callBtnText'), hidden = $('callTime');
+    var grid = $('calGrid'), title = $('calTitle'), prev = $('calPrev'), next = $('calNext');
+    var wheelH = $('wheelH'), wheelM = $('wheelM'), preview = $('timePreview'), error = $('sheetError');
+
+    var view, picked;     // месяц на экране и выбранный день
+    var chosen = null;    // подтверждённые дата и время
+
+    function pad(n) { return (n < 10 ? '0' : '') + n; }
+    function startOfDay(d) { return new Date(d.getFullYear(), d.getMonth(), d.getDate()); }
+    function sameDay(a, b) { return a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate(); }
+    function monthIndex(d) { return d.getFullYear() * 12 + d.getMonth(); }
+
+    function format(d) {
+        var s = WEEKDAYS[d.getDay()] + ', ' + d.getDate() + ' ' + MONTHS_GEN[d.getMonth()];
+        if (d.getFullYear() !== new Date().getFullYear()) s += ' ' + d.getFullYear();
+        return s + ', ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+    }
+    function capitalize(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+
+    // ---- Барабан ----
+    function buildWheel(el, count, step) {
+        var html = '<div class="wheel-pad"></div>';
+        for (var i = 0; i < count; i++) html += '<div class="wheel-item" data-i="' + i + '">' + pad(i * step) + '</div>';
+        el.innerHTML = html + '<div class="wheel-pad"></div>';
+        var ticking = false;
+        el.addEventListener('scroll', function () {
+            if (ticking) return;
+            ticking = true;
+            requestAnimationFrame(function () { ticking = false; paintWheel(el); updatePreview(); });
+        });
+        el.addEventListener('click', function (e) {
+            var it = e.target.closest('.wheel-item');
+            if (it) el.scrollTo({ top: +it.dataset.i * ITEM, behavior: 'smooth' });
+        });
+    }
+    function paintWheel(el) {
+        var st = el.scrollTop, items = el.querySelectorAll('.wheel-item');
+        for (var i = 0; i < items.length; i++) {
+            var d = (i * ITEM - st) / ITEM;
+            if (Math.abs(d) > 4) { items[i].style.transform = ''; continue; }
+            items[i].style.transform = 'rotateX(' + (-d * 20) + 'deg)';
+            items[i].style.opacity = Math.max(0.2, 1 - Math.abs(d) * 0.3);
+        }
+    }
+    function wheelValue(el) {
+        var max = el.querySelectorAll('.wheel-item').length - 1;
+        return Math.min(max, Math.max(0, Math.round(el.scrollTop / ITEM)));
+    }
+    function setWheel(el, i) { el.scrollTop = i * ITEM; paintWheel(el); }
+
+    buildWheel(wheelH, 24, 1);
+    buildWheel(wheelM, 60 / MIN_STEP, MIN_STEP);
+
+    function currentPick() {
+        return new Date(picked.getFullYear(), picked.getMonth(), picked.getDate(), wheelValue(wheelH), wheelValue(wheelM) * MIN_STEP);
+    }
+    function updatePreview() {
+        if (!picked) return;
+        preview.textContent = capitalize(format(currentPick()));
+        error.textContent = '';
+    }
+
+    // ---- Календарь ----
+    function renderCalendar() {
+        var today = startOfDay(new Date());
+        var first = new Date(view.getFullYear(), view.getMonth(), 1);
+        var offset = (first.getDay() + 6) % 7;
+        var days = new Date(view.getFullYear(), view.getMonth() + 1, 0).getDate();
+
+        title.textContent = MONTHS[view.getMonth()] + ' ' + view.getFullYear();
+        prev.disabled = monthIndex(view) <= monthIndex(today);
+        next.disabled = monthIndex(view) >= monthIndex(today) + MONTHS_AHEAD;
+
+        var html = '';
+        for (var i = 0; i < offset; i++) html += '<span></span>';
+        for (var d = 1; d <= days; d++) {
+            var date = new Date(view.getFullYear(), view.getMonth(), d);
+            var cls = 'cal-day' + (sameDay(date, today) ? ' today' : '') + (picked && sameDay(date, picked) ? ' selected' : '');
+            html += '<button type="button" class="' + cls + '" data-d="' + d + '"' + (date < today ? ' disabled' : '') + '>' + d + '</button>';
+        }
+        grid.innerHTML = html;
+    }
+
+    grid.addEventListener('click', function (e) {
+        var b = e.target.closest('.cal-day');
+        if (!b || b.disabled) return;
+        picked = new Date(view.getFullYear(), view.getMonth(), +b.dataset.d);
+        renderCalendar();
+        updatePreview();
+    });
+    prev.addEventListener('click', function () { view = new Date(view.getFullYear(), view.getMonth() - 1, 1); renderCalendar(); });
+    next.addEventListener('click', function () { view = new Date(view.getFullYear(), view.getMonth() + 1, 1); renderCalendar(); });
+
+    // ---- Открытие / закрытие ----
+    function defaultPick() {
+        var d = new Date(Date.now() + 60 * 60 * 1000);
+        d.setMinutes(Math.ceil(d.getMinutes() / MIN_STEP) * MIN_STEP, 0, 0);
+        var t = new Date();
+        // Рабочее время 9–21: рано утром предлагаем 10:00 сегодня, вечером — 10:00 завтра
+        if (!sameDay(d, t) || d.getHours() >= 21) return new Date(t.getFullYear(), t.getMonth(), t.getDate() + 1, 10, 0);
+        if (d.getHours() < 9) return new Date(t.getFullYear(), t.getMonth(), t.getDate(), 10, 0);
+        return d;
+    }
+
+    function open() {
+        var start = chosen || defaultPick();
+        picked = startOfDay(start);
+        view = new Date(start.getFullYear(), start.getMonth(), 1);
+        renderCalendar();
+        error.textContent = '';
+        sheet.classList.add('open');
+        backdrop.classList.add('open');
+        document.body.style.overflow = 'hidden';
+        setWheel(wheelH, start.getHours());
+        setWheel(wheelM, Math.floor(start.getMinutes() / MIN_STEP));
+        updatePreview();
+    }
+    function close() {
+        sheet.classList.remove('open');
+        backdrop.classList.remove('open');
+        document.body.style.overflow = '';
+    }
+    function apply(d) {
+        chosen = d;
+        hidden.value = d ? format(d) : '';
+        btnText.textContent = d ? capitalize(format(d)) : 'Указать дату и время звонка';
+        $('callBtn').classList.toggle('is-set', !!d);
+        row.classList.toggle('is-set', !!d);
+    }
+
+    $('callBtn').addEventListener('click', open);
+    $('sheetCancel').addEventListener('click', close);
+    backdrop.addEventListener('click', close);
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && sheet.classList.contains('open')) close(); });
+    $('sheetDone').addEventListener('click', function () {
+        var d = currentPick();
+        if (d < new Date()) { error.textContent = 'Это время уже прошло — выберите другое.'; return; }
+        apply(d);
+        close();
+    });
+    $('callClear').addEventListener('click', function () { apply(null); });
+    $('surveyForm').addEventListener('reset', function () { setTimeout(function () { apply(null); }, 0); });
+})();
+
 // Собираем красивое сообщение
 function buildMessage(data) {
     var lines = [];
@@ -495,10 +897,11 @@ function buildMessage(data) {
     }
 
     // Контакты
-    if (data['Телефон SMM'] || data['Телефон']) {
+    if (data['Телефон SMM'] || data['Телефон'] || data['Время звонка']) {
         lines.push('━━━━━━━━━━━━━━━━━━');
         if (data['Телефон SMM']) lines.push('📱 SMM-специалист: ' + data['Телефон SMM']);
         if (data['Телефон']) lines.push('📞 Телефон: ' + data['Телефон']);
+        if (data['Время звонка']) lines.push('🗓 Удобное время звонка: ' + data['Время звонка']);
     }
 
     return lines.join('\n');
