@@ -1,0 +1,714 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="robots" content="noindex, nofollow">
+<title>Рассылка анкеты</title>
+<!--
+  Страница для торговых представителей: рассылка ссылки на анкету клиентам.
+  Список клиентов НЕ хранится в репозитории: торговый загружает свой Excel-файл,
+  файл читается прямо в браузере и сохраняется только на этом устройстве (localStorage).
+-->
+<style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+        max-width: 100%;
+        overflow-x: hidden;
+        overflow-x: clip;
+        overscroll-behavior-x: none;
+        touch-action: pan-y;
+        -webkit-text-size-adjust: 100%;
+                text-size-adjust: 100%;
+    }
+
+    body {
+        background: #000;
+        color: #e8e8e8;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+        font-size: 16px;
+        line-height: 1.5;
+        padding: 32px 16px 48px;
+        min-height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+    }
+
+    .container {
+        position: relative;
+        max-width: 640px;
+        width: 100%;
+        background: #0a0a0a;
+        border-radius: 18px;
+        padding: 32px 24px;
+        box-shadow: 0 0 80px rgba(255,255,255,0.04);
+    }
+
+    .container::before {
+        content: "";
+        position: absolute;
+        inset: 0;
+        border-radius: 18px;
+        padding: 1px;
+        background: linear-gradient(130deg, #1a1a1a 0%, #1a1a1a 40%, rgba(255,255,255,0.7) 50%, #1a1a1a 60%, #1a1a1a 100%);
+        background-size: 300% 300%;
+        -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+        -webkit-mask-composite: xor;
+                mask-composite: exclude;
+        animation: borderShimmer 5s linear infinite;
+        pointer-events: none;
+    }
+    @keyframes borderShimmer { 0% { background-position: 100% 0; } 100% { background-position: -100% 0; } }
+
+    .logo-wrap { text-align: center; margin-bottom: 18px; }
+    .logo { max-width: 160px; width: 100%; height: auto; opacity: 0.95; filter: drop-shadow(0 0 24px rgba(255,255,255,0.12)); }
+
+    h1 { text-align: center; font-size: 22px; font-weight: 600; color: #fff; margin-bottom: 6px; }
+    .subtitle { text-align: center; color: #888; font-size: 14px; margin-bottom: 24px; }
+
+    .hidden { display: none !important; }
+
+    /* ---- Загрузка файла ---- */
+    .upload {
+        display: block;
+        border: 1px dashed #333;
+        border-radius: 14px;
+        padding: 32px 20px;
+        text-align: center;
+        cursor: pointer;
+        transition: border-color 0.2s, background 0.2s;
+    }
+    .upload:hover, .upload.drag { border-color: #777; background: #111; }
+    .upload-icon {
+        width: 52px; height: 52px; margin: 0 auto 14px; border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        background: #fff; color: #000; box-shadow: 0 0 32px rgba(255,255,255,0.2);
+    }
+    .upload b { display: block; color: #fff; font-size: 16px; font-weight: 600; margin-bottom: 6px; }
+    .upload span { color: #777; font-size: 13px; }
+    .privacy { color: #666; font-size: 12px; text-align: center; margin-top: 14px; line-height: 1.5; }
+    .load-error { color: #ff6b6b; font-size: 13px; text-align: center; margin-top: 12px; min-height: 1px; }
+
+    /* ---- Панель ---- */
+    .progress { margin-bottom: 18px; }
+    .progress-top { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 8px; font-size: 13px; color: #888; }
+    .progress-top b { color: #fff; font-size: 15px; font-weight: 600; }
+    .bar { height: 6px; border-radius: 3px; background: #1c1c1e; overflow: hidden; }
+    .bar i { display: block; height: 100%; width: 0; background: #fff; border-radius: 3px; transition: width 0.4s ease; box-shadow: 0 0 12px rgba(255,255,255,0.5); }
+
+    .chips { display: flex; gap: 8px; overflow-x: auto; scrollbar-width: none; margin-bottom: 12px; touch-action: pan-x pan-y; }
+    .chips::-webkit-scrollbar { display: none; }
+    .chip {
+        flex-shrink: 0;
+        padding: 8px 14px;
+        border-radius: 999px;
+        border: 1px solid #2a2a2a;
+        background: #111;
+        color: #aaa;
+        font: inherit;
+        font-size: 13px;
+        cursor: pointer;
+        white-space: nowrap;
+        -webkit-tap-highlight-color: transparent;
+        touch-action: manipulation;
+        transition: background 0.12s, color 0.12s, border-color 0.12s;
+    }
+    .chip.on { background: #fff; color: #000; border-color: #fff; font-weight: 600; }
+    .chip .n { opacity: 0.6; margin-left: 4px; }
+
+    /* Фильтр — сегменты одинаковой ширины, без прокрутки */
+    #filterChips { display: grid; grid-template-columns: repeat(3, 1fr); overflow: visible; }
+    #filterChips .chip { padding: 8px 4px; text-align: center; }
+
+    .search {
+        width: 100%;
+        background: #111;
+        border: 1px solid #2a2a2a;
+        border-radius: 10px;
+        color: #fff;
+        padding: 12px 14px;
+        font: inherit;
+        font-size: 16px;
+        outline: none;
+        margin-bottom: 12px;
+        transition: border-color 0.2s;
+    }
+    .search:focus { border-color: #666; }
+    .search::placeholder { color: #555; }
+
+    /* ---- Текст сообщения ---- */
+    details.msg { margin-bottom: 18px; border: 1px solid #1f1f1f; border-radius: 12px; background: #0e0e0e; }
+    details.msg summary {
+        list-style: none;
+        cursor: pointer;
+        padding: 12px 14px;
+        font-size: 14px;
+        color: #bbb;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    details.msg summary::-webkit-details-marker { display: none; }
+    details.msg summary::after { content: "›"; font-size: 20px; color: #666; transition: transform 0.2s; }
+    details.msg[open] summary::after { transform: rotate(90deg); }
+    .msg-body { padding: 0 14px 14px; }
+    .msg-body textarea {
+        width: 100%;
+        min-height: 150px;
+        resize: vertical;
+        background: #111;
+        border: 1px solid #2a2a2a;
+        border-radius: 10px;
+        color: #fff;
+        padding: 12px;
+        font: inherit;
+        font-size: 16px;
+        line-height: 1.5;
+        outline: none;
+    }
+    .msg-body textarea:focus { border-color: #666; }
+    .msg-hint { color: #666; font-size: 12px; margin-top: 8px; line-height: 1.6; }
+    .msg-hint code { color: #bbb; background: #1c1c1e; border-radius: 4px; padding: 1px 5px; font-family: inherit; }
+    .link-btn { background: none; border: none; color: #888; font: inherit; font-size: 12px; text-decoration: underline; cursor: pointer; padding: 0; }
+    .link-btn:hover { color: #fff; }
+
+    /* ---- Карточки контактов ---- */
+    .list { display: flex; flex-direction: column; gap: 10px; }
+
+    .card {
+        border: 1px solid #222;
+        border-radius: 14px;
+        background: #0f0f0f;
+        padding: 14px;
+        transition: opacity 0.2s, border-color 0.2s;
+    }
+    .card.done { opacity: 0.55; }
+    .card.covered { opacity: 0.7; }
+
+    .card-top { display: flex; align-items: flex-start; gap: 12px; }
+    .avatar {
+        flex-shrink: 0;
+        width: 40px; height: 40px; border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        background: #1c1c1e; color: #fff; font-weight: 600; font-size: 16px;
+    }
+    .card.done .avatar { background: #fff; color: #000; }
+    .who { flex: 1; min-width: 0; }
+    .who b { display: block; color: #fff; font-size: 16px; font-weight: 600; }
+    .who .phone { color: #888; font-size: 13px; font-variant-numeric: tabular-nums; }
+
+    .points { margin: 10px 0 0 52px; display: flex; flex-direction: column; gap: 4px; }
+    .point { color: #aaa; font-size: 13px; line-height: 1.4; overflow-wrap: anywhere; }
+    .point small { color: #555; margin-left: 4px; }
+    .point.ok { color: #666; }
+    .point.ok::before { content: "✓ "; color: #8fd19e; }
+    .points-more { background: none; border: none; color: #777; font: inherit; font-size: 12px; text-align: left; cursor: pointer; padding: 2px 0; }
+
+    .actions { display: flex; gap: 8px; margin-top: 12px; }
+    .btn {
+        flex: 1;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 12px 10px;
+        border-radius: 10px;
+        font: inherit;
+        font-size: 14px;
+        font-weight: 600;
+        text-decoration: none;
+        cursor: pointer;
+        border: 1px solid transparent;
+        -webkit-tap-highlight-color: transparent;
+        touch-action: manipulation;
+        transition: transform 0.1s, background 0.12s, color 0.12s;
+    }
+    .btn:active { transform: scale(0.97); }
+    .btn-tg { background: #fff; color: #000; }
+    .btn-sms { background: #111; color: #ddd; border-color: #2a2a2a; flex: 0 0 auto; padding-left: 16px; padding-right: 16px; }
+    .card.done .btn-tg, .card.covered .btn-tg { background: #1c1c1e; color: #ccc; }
+
+    .status { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: 10px; font-size: 12px; color: #8fd19e; }
+    .card.covered .status { color: #888; }
+
+    .empty { text-align: center; color: #666; font-size: 14px; padding: 28px 0; }
+
+    details.nocontact { margin-top: 18px; color: #777; font-size: 13px; }
+    details.nocontact summary { cursor: pointer; padding: 6px 0; }
+    details.nocontact ul { list-style: none; padding: 6px 0 0 0; display: flex; flex-direction: column; gap: 4px; }
+    details.nocontact li { color: #999; overflow-wrap: anywhere; }
+
+    .footer { display: flex; justify-content: center; gap: 18px; margin-top: 26px; flex-wrap: wrap; }
+
+    .toast {
+        position: fixed;
+        left: 50%;
+        bottom: calc(24px + env(safe-area-inset-bottom));
+        transform: translate(-50%, 20px);
+        background: #fff;
+        color: #000;
+        padding: 10px 16px;
+        border-radius: 999px;
+        font-size: 14px;
+        font-weight: 600;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.25s, transform 0.25s;
+        z-index: 50;
+        white-space: nowrap;
+    }
+    .toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+    @media (max-width: 520px) {
+        body { padding: 16px 10px 40px; }
+        .container { padding: 24px 14px; }
+        h1 { font-size: 20px; }
+        .points { margin-left: 0; }
+    }
+</style>
+</head>
+<body>
+
+<main class="container">
+    <div class="logo-wrap"><img src="logo.png" alt="Darkside" class="logo"></div>
+    <h1>Рассылка анкеты</h1>
+    <p class="subtitle" id="subtitle">Нажмите на клиента — откроется Telegram с готовым сообщением</p>
+
+    <!-- Шаг 1: загрузка файла -->
+    <section id="uploadView">
+        <label class="upload" id="dropzone" for="fileInput">
+            <div class="upload-icon">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 16V4M7 9l5-5 5 5M5 20h14"/></svg>
+            </div>
+            <b>Загрузите Excel со списком клиентов</b>
+            <span>Нажмите, чтобы выбрать файл</span>
+        </label>
+        <p class="load-error" id="loadError"></p>
+        <p class="privacy">Файл никуда не отправляется: он читается прямо на этом устройстве, и список хранится только здесь.</p>
+    </section>
+
+    <!-- Шаг 2: список -->
+    <section id="listView" class="hidden">
+        <div class="progress">
+            <div class="progress-top"><span>Охвачено точек</span><span><b id="progDone">0</b> из <span id="progTotal">0</span></span></div>
+            <div class="bar"><i id="progBar"></i></div>
+        </div>
+
+        <div class="chips" id="mgrChips"></div>
+        <input type="search" class="search" id="search" placeholder="Поиск по имени, точке или телефону" autocomplete="off">
+        <div class="chips" id="filterChips"></div>
+
+        <details class="msg" id="msgBox">
+            <summary>Текст сообщения</summary>
+            <div class="msg-body">
+                <textarea id="msgText"></textarea>
+                <p class="msg-hint">
+                    <code>{имя}</code> — имя контакта, <code>{ссылка}</code> — ссылка на анкету,
+                    <code>{точки}</code> — просьба заполнить анкету по каждой точке (подставляется, только если у контакта их несколько).
+                    <br><button type="button" class="link-btn" id="msgReset">Вернуть текст по умолчанию</button>
+                </p>
+            </div>
+        </details>
+
+        <div class="list" id="list"></div>
+        <div class="empty hidden" id="empty"></div>
+
+        <details class="nocontact hidden" id="noContact">
+            <summary id="noContactTitle"></summary>
+            <ul id="noContactList"></ul>
+        </details>
+
+        <div class="footer">
+            <button type="button" class="link-btn" id="reload">Загрузить другой файл</button>
+            <button type="button" class="link-btn" id="wipe">Удалить список с устройства</button>
+        </div>
+    </section>
+</main>
+
+<div class="toast" id="toast"></div>
+<input type="file" id="fileInput" accept=".xlsx,.xls,.csv" style="position:fixed;left:-9999px;width:1px;height:1px;opacity:0">
+
+<script src="vendor/xlsx.mini.min.js"></script>
+<script>
+(function () {
+    'use strict';
+
+    var STORE_KEY = 'ds-send-v1';
+    var SURVEY_URL = new URL('./', location.href).href;   // анкета лежит рядом с этой страницей
+    var DEFAULT_TEXT =
+        'Здравствуйте, {имя}! Это DARKSIDE.\n\n' +
+        'Хотим стать для вас лучше — ответьте, пожалуйста, на несколько вопросов о нашей работе. Это займёт 2–3 минуты:\n' +
+        '{ссылка}\n\n' +
+        '{точки}' +
+        'Спасибо!';
+    var MULTI_NOTE = 'У вас несколько точек ({n}) — пожалуйста, заполните анкету по каждой.';
+    var POINTS_PREVIEW = 3;
+
+    var $ = function (id) { return document.getElementById(id); };
+
+    // ---------- Хранилище (только это устройство) ----------
+    var state = { clients: null, sent: {}, mgr: '', filter: 'todo', text: DEFAULT_TEXT, fileName: '' };
+
+    function load() {
+        try {
+            var raw = localStorage.getItem(STORE_KEY);
+            if (raw) {
+                var s = JSON.parse(raw);
+                if (s && typeof s === 'object') Object.keys(state).forEach(function (k) { if (k in s) state[k] = s[k]; });
+            }
+        } catch (e) {}
+        if (!state.sent || typeof state.sent !== 'object') state.sent = {};
+        if (typeof state.text !== 'string' || !state.text.trim()) state.text = DEFAULT_TEXT;
+    }
+    function save() {
+        try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch (e) {}
+    }
+
+    // ---------- Разбор Excel ----------
+    var PHONE_RE = /(?:\+?7|8)?[\s\-–(]*\d{3}[\s\-–)]*\d{3}[\s\-–]*\d{2}[\s\-–]*\d{2}/g;
+
+    function normPhone(s) {
+        var d = String(s).replace(/\D/g, '');
+        if (d.length === 11 && (d[0] === '8' || d[0] === '7')) return '7' + d.slice(1);
+        if (d.length === 10) return '7' + d;
+        return null;
+    }
+    function prettyPhone(p) {
+        return '+7 (' + p.slice(1, 4) + ') ' + p.slice(4, 7) + '-' + p.slice(7, 9) + '-' + p.slice(9, 11);
+    }
+    function roleFromHeader(h) {
+        h = String(h).toLowerCase();
+        if (h.indexOf('заявк') >= 0 && h.indexOf('дела') >= 0) return 'делает заявки';
+        if (h.indexOf('подтв') >= 0) return 'подтверждает';
+        if (h.indexOf('принима') >= 0) return 'принимает товар';
+        return String(h).trim();
+    }
+
+    function parseContacts(cell) {
+        var text = String(cell == null ? '' : cell);
+        var out = [];
+        var m, last = 0;
+        PHONE_RE.lastIndex = 0;
+        while ((m = PHONE_RE.exec(text))) {
+            var phone = normPhone(m[0]);
+            var name = text.slice(last, m.index).replace(/[,;:\-–—\s]+$/g, '').replace(/^[,;:\-–—\s]+/g, '').trim();
+            last = PHONE_RE.lastIndex;
+            if (phone) out.push({ name: name, phone: phone });
+        }
+        return out;
+    }
+
+    function parseRows(rows) {
+        // Строка заголовков — первая, где есть «менеджер» или «Кто …»
+        var hi = -1;
+        for (var i = 0; i < Math.min(rows.length, 30); i++) {
+            var r = rows[i] || [];
+            if (r.some(function (c) { return /менеджер|^\s*кто\s/i.test(String(c)); })) { hi = i; break; }
+        }
+        if (hi < 0) throw new Error('Не нашли строку заголовков. Нужны столбцы «Клиент», «Основной менеджер» и столбцы с контактами «Кто …».');
+        var hdr = rows[hi].map(function (c) { return String(c || '').trim(); });
+
+        var nameCol = hdr.findIndex(function (h) { return /^клиент/i.test(h); });
+        if (nameCol < 0) nameCol = 0;
+        var mgrCol = hdr.findIndex(function (h, i) { return i !== nameCol && /менеджер/i.test(h); });
+        var typeCol = hdr.findIndex(function (h) { return /^тип/i.test(h); });
+        var contactCols = [];
+        hdr.forEach(function (h, i) { if (/^кто\s/i.test(h)) contactCols.push(i); });
+
+        // Если столбцов «Кто …» нет — берём все, где встречаются телефоны
+        if (!contactCols.length) {
+            hdr.forEach(function (h, i) {
+                if (i === nameCol) return;
+                var hits = 0;
+                for (var j = hi + 1; j < rows.length && j < hi + 200; j++) if (parseContacts((rows[j] || [])[i]).length) hits++;
+                if (hits > 0) contactCols.push(i);
+            });
+        }
+        if (!contactCols.length) throw new Error('В файле не нашлось телефонов клиентов.');
+
+        var clients = [];
+        for (var k = hi + 1; k < rows.length; k++) {
+            var row = rows[k] || [];
+            var name = String(row[nameCol] == null ? '' : row[nameCol]).trim();
+            if (!name) continue;
+            var others = row.filter(function (c, idx) { return idx !== nameCol && String(c == null ? '' : c).trim(); });
+            if (!others.length) continue;   // строка-группа (например, имя менеджера)
+
+            var contacts = [];
+            contactCols.forEach(function (ci) {
+                parseContacts(row[ci]).forEach(function (c) {
+                    var ex = contacts.find(function (x) { return x.phone === c.phone; });
+                    var role = roleFromHeader(hdr[ci]);
+                    if (ex) { if (ex.roles.indexOf(role) < 0) ex.roles.push(role); if (!ex.name && c.name) ex.name = c.name; }
+                    else contacts.push({ name: c.name, phone: c.phone, roles: [role] });
+                });
+            });
+            clients.push({
+                id: clients.length,
+                name: name,
+                mgr: mgrCol >= 0 ? String(row[mgrCol] == null ? '' : row[mgrCol]).trim() : '',
+                type: typeCol >= 0 ? String(row[typeCol] == null ? '' : row[typeCol]).trim() : '',
+                contacts: contacts
+            });
+        }
+        if (!clients.length) throw new Error('В файле не нашлось клиентов.');
+        return clients;
+    }
+
+    function readFile(file) {
+        $('loadError').textContent = '';
+        if (!window.XLSX) { $('loadError').textContent = 'Не загрузился модуль чтения Excel. Обновите страницу.'; return; }
+        var reader = new FileReader();
+        reader.onload = function () {
+            try {
+                var wb = XLSX.read(new Uint8Array(reader.result), { type: 'array' });
+                var ws = wb.Sheets[wb.SheetNames[0]];
+                var rows = XLSX.utils.sheet_to_json(ws, { header: 1, raw: false, defval: '' });
+                state.clients = parseRows(rows);
+                state.fileName = file.name;
+                var mgrs = managers();
+                if (mgrs.indexOf(state.mgr) < 0) state.mgr = mgrs.length === 1 ? mgrs[0] : '';
+                save();
+                render();
+                toast('Загружено точек: ' + state.clients.length);
+            } catch (e) {
+                $('loadError').textContent = e && e.message ? e.message : 'Не получилось прочитать файл.';
+            }
+        };
+        reader.onerror = function () { $('loadError').textContent = 'Не получилось прочитать файл.'; };
+        reader.readAsArrayBuffer(file);
+    }
+
+    // ---------- Модель: контакты, сгруппированные по телефону ----------
+    function managers() {
+        var seen = [];
+        (state.clients || []).forEach(function (c) { if (c.mgr && seen.indexOf(c.mgr) < 0) seen.push(c.mgr); });
+        return seen;
+    }
+    function visibleClients() {
+        return (state.clients || []).filter(function (c) { return !state.mgr || c.mgr === state.mgr; });
+    }
+    function buildPeople(clients) {
+        var map = {}, order = [];
+        clients.forEach(function (c) {
+            c.contacts.forEach(function (ct) {
+                var p = map[ct.phone];
+                if (!p) { p = map[ct.phone] = { phone: ct.phone, names: {}, points: [], roles: {} }; order.push(p); }
+                if (ct.name) p.names[ct.name] = (p.names[ct.name] || 0) + 1;
+                p.points.push(c);
+                ct.roles.forEach(function (r) { p.roles[r] = 1; });
+            });
+        });
+        order.forEach(function (p) {
+            var best = '', n = 0;
+            Object.keys(p.names).forEach(function (k) { if (p.names[k] > n) { best = k; n = p.names[k]; } });
+            p.name = best;
+        });
+        return order;
+    }
+    function isCovered(client) {
+        return client.contacts.some(function (ct) { return state.sent[ct.phone]; });
+    }
+    function personStatus(p) {
+        if (state.sent[p.phone]) return 'done';
+        if (p.points.every(isCovered)) return 'covered';
+        return 'todo';
+    }
+
+    // ---------- Сообщение и ссылки ----------
+    function firstName(name) {
+        return String(name || '').trim().split(/\s+/)[0] || '';
+    }
+    function messageFor(p) {
+        var name = firstName(p.name);
+        var t = state.text;
+        t = name ? t.replace(/\{имя\}/g, name) : t.replace(/,?[ \t]*\{имя\}/g, '');
+        t = t.replace(/\{ссылка\}/g, SURVEY_URL);
+        if (t.indexOf(SURVEY_URL) < 0) t += '\n' + SURVEY_URL;
+        var note = p.points.length > 1 ? MULTI_NOTE.replace('{n}', p.points.length) : '';
+        if (t.indexOf('{точки}') >= 0) t = t.replace(/\{точки\}/g, note ? note + '\n\n' : '');
+        else if (note) t += '\n\n' + note;
+        return t.replace(/\n{3,}/g, '\n\n').trim();
+    }
+    function tgLink(p) {
+        return 'https://t.me/+' + p.phone + '?text=' + encodeURIComponent(messageFor(p));
+    }
+    function smsLink(p) {
+        return 'sms:+' + p.phone + '?&body=' + encodeURIComponent(messageFor(p));
+    }
+
+    // ---------- Отрисовка ----------
+    function esc(s) {
+        return String(s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; });
+    }
+    function fmtTime(ts) {
+        var d = new Date(ts);
+        var M = ['янв', 'фев', 'мар', 'апр', 'мая', 'июн', 'июл', 'авг', 'сен', 'окт', 'ноя', 'дек'];
+        return d.getDate() + ' ' + M[d.getMonth()] + ', ' + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+    }
+    function lastName(fio) { return String(fio).split(/\s+/)[0]; }
+
+    var expanded = {};
+
+    function render() {
+        var has = !!(state.clients && state.clients.length);
+        $('uploadView').classList.toggle('hidden', has);
+        $('listView').classList.toggle('hidden', !has);
+        $('subtitle').textContent = has ? 'Нажмите «Telegram» — откроется чат с готовым сообщением' : 'Нажмите на клиента — откроется Telegram с готовым сообщением';
+        if (!has) return;
+
+        // Менеджеры
+        var mgrs = managers();
+        var mc = $('mgrChips');
+        mc.classList.toggle('hidden', mgrs.length < 2);
+        if (mgrs.length >= 2) {
+            mc.innerHTML = ['<button type="button" class="chip' + (!state.mgr ? ' on' : '') + '" data-mgr="">Все</button>']
+                .concat(mgrs.map(function (m) {
+                    return '<button type="button" class="chip' + (state.mgr === m ? ' on' : '') + '" data-mgr="' + esc(m) + '">' + esc(lastName(m)) + '</button>';
+                })).join('');
+        }
+
+        var clients = visibleClients();
+        var people = buildPeople(clients);
+        var noContact = clients.filter(function (c) { return !c.contacts.length; });
+
+        // Прогресс
+        var withContacts = clients.filter(function (c) { return c.contacts.length; });
+        var covered = withContacts.filter(isCovered).length;
+        $('progDone').textContent = covered;
+        $('progTotal').textContent = withContacts.length;
+        $('progBar').style.width = withContacts.length ? (covered / withContacts.length * 100) + '%' : '0';
+
+        // Фильтры
+        var counts = { todo: 0, done: 0, all: people.length };
+        people.forEach(function (p) { var s = personStatus(p); if (s === 'todo') counts.todo++; else counts.done++; });
+        var F = [['todo', 'Осталось'], ['done', 'Отправлено'], ['all', 'Все']];
+        $('filterChips').innerHTML = F.map(function (f) {
+            return '<button type="button" class="chip' + (state.filter === f[0] ? ' on' : '') + '" data-filter="' + f[0] + '">' + f[1] + '<span class="n">' + counts[f[0]] + '</span></button>';
+        }).join('');
+
+        // Поиск + фильтр
+        var q = $('search').value.trim().toLowerCase();
+        var qd = q.replace(/\D/g, '');
+        var shown = people.filter(function (p) {
+            var s = personStatus(p);
+            if (state.filter === 'todo' && s !== 'todo') return false;
+            if (state.filter === 'done' && s === 'todo') return false;
+            if (!q) return true;
+            if (p.name.toLowerCase().indexOf(q) >= 0) return true;
+            if (qd.length >= 3 && p.phone.indexOf(qd) >= 0) return true;
+            return p.points.some(function (c) { return c.name.toLowerCase().indexOf(q) >= 0; });
+        });
+
+        $('list').innerHTML = shown.map(cardHtml).join('');
+        var empty = $('empty');
+        empty.classList.toggle('hidden', shown.length > 0);
+        if (!shown.length) {
+            empty.textContent = q ? 'Ничего не нашлось' : (state.filter === 'todo' ? 'Всем отправлено 🎉' : 'Пока никому не отправлено');
+        }
+
+        // Без контактов
+        var nc = $('noContact');
+        nc.classList.toggle('hidden', !noContact.length);
+        if (noContact.length) {
+            $('noContactTitle').textContent = 'Точки без телефона в файле: ' + noContact.length;
+            $('noContactList').innerHTML = noContact.map(function (c) { return '<li>' + esc(c.name) + '</li>'; }).join('');
+        }
+    }
+
+    function cardHtml(p) {
+        var st = personStatus(p);
+        var sent = state.sent[p.phone];
+        var title = p.name || 'Без имени';
+        var initial = (p.name || '?').trim().charAt(0).toUpperCase();
+        var open = expanded[p.phone];
+        var pts = open ? p.points : p.points.slice(0, POINTS_PREVIEW);
+        var ptsHtml = pts.map(function (c) {
+            return '<div class="point' + (st !== 'done' && isCovered(c) ? ' ok' : '') + '">' + esc(c.name) + (c.type ? '<small>' + esc(c.type) + '</small>' : '') + '</div>';
+        }).join('');
+        if (p.points.length > POINTS_PREVIEW) {
+            ptsHtml += '<button type="button" class="points-more" data-more="' + p.phone + '">' +
+                (open ? 'Свернуть' : 'Ещё ' + (p.points.length - POINTS_PREVIEW)) + '</button>';
+        }
+        var status = '';
+        if (st === 'done') {
+            status = '<div class="status"><span>✓ Отправлено ' + fmtTime(sent.at) + (sent.via === 'sms' ? ' · SMS' : ' · Telegram') + '</span>' +
+                '<button type="button" class="link-btn" data-undo="' + p.phone + '">Отменить</button></div>';
+        } else if (st === 'covered') {
+            status = '<div class="status"><span>Эти точки уже получили ссылку через другой контакт</span></div>';
+        }
+        return '<article class="card ' + st + '">' +
+            '<div class="card-top"><div class="avatar">' + esc(initial) + '</div>' +
+            '<div class="who"><b>' + esc(title) + '</b><span class="phone">' + prettyPhone(p.phone) + '</span></div></div>' +
+            '<div class="points">' + ptsHtml + '</div>' +
+            '<div class="actions">' +
+                '<a class="btn btn-tg" href="' + esc(tgLink(p)) + '" target="_blank" rel="noopener" data-send="' + p.phone + '" data-via="tg">' +
+                    '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M21.5 4.2 2.9 11.4c-1.3.5-1.3 1.2-.2 1.6l4.8 1.5 1.8 5.6c.2.6.1.9.8.9.5 0 .7-.2 1-.5l2.3-2.2 4.8 3.5c.9.5 1.5.2 1.7-.8l3.2-15c.3-1.3-.5-1.9-1.6-1.4ZM8.6 14.2l9.7-6.1c.5-.3.9-.1.5.2l-8.3 7.5-.3 3.5-1.6-5.1Z"/></svg>' +
+                    'Telegram</a>' +
+                '<a class="btn btn-sms" href="' + esc(smsLink(p)) + '" data-send="' + p.phone + '" data-via="sms">SMS</a>' +
+            '</div>' + status +
+        '</article>';
+    }
+
+    // ---------- События ----------
+    var toastTimer;
+    function toast(text) {
+        var t = $('toast');
+        t.textContent = text;
+        t.classList.add('show');
+        clearTimeout(toastTimer);
+        toastTimer = setTimeout(function () { t.classList.remove('show'); }, 2200);
+    }
+
+    $('fileInput').addEventListener('change', function (e) {
+        var f = e.target.files && e.target.files[0];
+        if (f) readFile(f);
+        e.target.value = '';
+    });
+    var dz = $('dropzone');
+    ['dragenter', 'dragover'].forEach(function (ev) { dz.addEventListener(ev, function (e) { e.preventDefault(); dz.classList.add('drag'); }); });
+    ['dragleave', 'drop'].forEach(function (ev) { dz.addEventListener(ev, function (e) { e.preventDefault(); dz.classList.remove('drag'); }); });
+    dz.addEventListener('drop', function (e) { var f = e.dataTransfer.files && e.dataTransfer.files[0]; if (f) readFile(f); });
+
+    document.addEventListener('click', function (e) {
+        var t = e.target.closest('[data-mgr],[data-filter],[data-send],[data-undo],[data-more]');
+        if (!t) return;
+        if (t.hasAttribute('data-mgr')) { state.mgr = t.getAttribute('data-mgr'); save(); render(); return; }
+        if (t.hasAttribute('data-filter')) { state.filter = t.getAttribute('data-filter'); save(); render(); return; }
+        if (t.hasAttribute('data-more')) { var ph = t.getAttribute('data-more'); expanded[ph] = !expanded[ph]; render(); return; }
+        if (t.hasAttribute('data-undo')) { delete state.sent[t.getAttribute('data-undo')]; save(); render(); return; }
+        if (t.hasAttribute('data-send')) {
+            // Ссылка открывается как обычно; отмечаем после перехода, чтобы карточка не прыгнула под пальцем
+            var phone = t.getAttribute('data-send'), via = t.getAttribute('data-via');
+            setTimeout(function () {
+                state.sent[phone] = { at: Date.now(), via: via };
+                save();
+                render();
+            }, 600);
+        }
+    });
+
+    $('search').addEventListener('input', render);
+
+    var msg = $('msgText');
+    msg.addEventListener('input', function () { state.text = msg.value; save(); render(); });
+    $('msgReset').addEventListener('click', function () { state.text = DEFAULT_TEXT; msg.value = DEFAULT_TEXT; save(); render(); });
+
+    $('reload').addEventListener('click', function () { $('fileInput').click(); });
+    $('wipe').addEventListener('click', function () {
+        if (!window.confirm('Удалить список клиентов и отметки об отправке с этого устройства?')) return;
+        try { localStorage.removeItem(STORE_KEY); } catch (e) {}
+        state = { clients: null, sent: {}, mgr: '', filter: 'todo', text: DEFAULT_TEXT, fileName: '' };
+        msg.value = DEFAULT_TEXT;
+        render();
+    });
+
+    load();
+    msg.value = state.text;
+    render();
+})();
+</script>
+</body>
+</html>
